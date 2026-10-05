@@ -3,210 +3,212 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pelayanan Desa Lubuk Sitarak</title>
+    <title>Sistem Pelayanan Desa</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/feather-icons"></script>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        .custom-scroll::-webkit-scrollbar { height: 8px; width: 8px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
+<body class="bg-slate-100 text-slate-800 font-sans h-screen overflow-hidden">
 
     <!-- ================= HALAMAN LOGIN ================= -->
-    <div id="loginPage" class="flex items-center justify-center min-h-screen bg-emerald-900">
-        <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border-t-8 border-emerald-500">
+    <div id="loginPage" class="flex items-center justify-center h-full bg-slate-800 relative z-50">
+        <div class="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md border-t-4 border-blue-600">
             <div class="text-center mb-6">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Garuda_Pancasila_Coat_of_Arms_of_Indonesia.svg/200px-Garuda_Pancasila_Coat_of_Arms_of_Indonesia.svg.png" alt="Logo" class="w-16 h-16 mx-auto mb-3 object-contain opacity-80">
-                <h2 class="text-2xl font-bold text-slate-800">Desa Lubuk Sitarak</h2>
-                <p class="text-sm text-slate-500">Sistem Pelayanan Administrasi Terpadu</p>
+                <h2 class="text-2xl font-bold text-slate-800">Portal Desa</h2>
+                <p class="text-sm text-slate-500">Silakan masuk sesuai akun Anda</p>
             </div>
             
             <form onsubmit="prosesLogin(event)" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-semibold text-slate-600 mb-1">Username</label>
-                    <input type="text" id="loginUsername" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:border-emerald-600">
-                </div>
-                <div>
-                    <label class="block text-sm font-semibold text-slate-600 mb-1">Password</label>
-                    <input type="password" id="loginPassword" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:border-emerald-600">
-                </div>
-                <div id="loginError" class="hidden text-rose-600 text-sm font-semibold text-center bg-rose-50 p-2 rounded">
+                <input type="text" id="loginUsername" required placeholder="Username (contoh: rt1, rt2, operator)" class="w-full px-4 py-2.5 border border-slate-300 rounded focus:outline-none focus:border-blue-600 bg-slate-50">
+                <input type="password" id="loginPassword" required placeholder="Password (isi: 123)" class="w-full px-4 py-2.5 border border-slate-300 rounded focus:outline-none focus:border-blue-600 bg-slate-50">
+                <div id="loginError" class="hidden text-rose-600 text-sm font-semibold text-center bg-rose-50 p-2 rounded border border-rose-200">
                     Username atau Password salah!
                 </div>
-                <button type="submit" class="w-full bg-emerald-600 text-white font-bold py-2 rounded-lg hover:bg-emerald-700 transition">Masuk</button>
+                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded hover:bg-blue-700 transition shadow-md">Masuk</button>
             </form>
             
-            <div class="mt-6 p-4 bg-slate-50 rounded-lg text-xs text-slate-600 space-y-1">
-                <p><strong>Akses Simulasi:</strong></p>
-                <p>1. Warga &rarr; User: <b>warga</b> | Pass: <b>123</b></p>
-                <p>2. Ketua RT &rarr; User: <b>rt</b> | Pass: <b>123</b></p>
-                <p>3. Operator &rarr; User: <b>operator</b> | Pass: <b>123</b></p>
+            <div class="mt-6 p-4 bg-slate-100 rounded text-xs text-slate-600 border border-slate-200">
+                <p class="font-bold mb-1">Daftar Akun Simulasi (Password: 123):</p>
+                <ul class="space-y-1 ml-2">
+                    <li>&bull; <b>rt1</b> sampai <b>rt19</b> &rarr; Untuk masing-masing Ketua RT</li>
+                    <li>&bull; <b>operator</b> &rarr; Untuk Admin Pengelola</li>
+                </ul>
             </div>
         </div>
     </div>
 
-    <!-- ================= HALAMAN DASHBOARD ================= -->
-    <div id="dashboardPage" class="hidden">
-        <!-- Header -->
-        <header class="bg-emerald-800 text-white shadow-md sticky top-0 z-50">
-            <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-                <div class="flex items-center space-x-3">
-                    <i data-feather="grid"></i>
-                    <div>
-                        <h1 class="text-lg font-bold leading-tight">Pelayanan Desa Lubuk Sitarak</h1>
-                        <p class="text-xs text-emerald-200">Mudah, Cepat, dan Transparan</p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-4">
-                    <span id="userGreeting" class="text-sm font-medium hidden md:block">Halo, User</span>
-                    <button onclick="prosesLogout()" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 rounded-lg text-xs font-bold transition flex items-center gap-1">
-                        <i data-feather="log-out" class="w-4 h-4"></i> Keluar
-                    </button>
-                </div>
+    <!-- ================= DASHBOARD RT (TAMPILAN SEDERHANA & TERPISAH) ================= -->
+    <div id="dashboardRT" class="hidden h-full flex flex-col overflow-y-auto bg-slate-50">
+        <header class="bg-emerald-600 text-white shadow-md py-4 px-6 flex justify-between items-center shrink-0">
+            <div>
+                <h1 id="rtNamaHeader" class="text-xl font-bold">Ketua RT</h1>
+                <p class="text-xs text-emerald-200">Panel Pengajuan Layanan Warga</p>
             </div>
+            <button onclick="prosesLogout()" class="bg-emerald-800 hover:bg-rose-600 px-4 py-2 rounded text-sm font-bold transition flex gap-2"><i data-feather="log-out" class="w-4 h-4"></i> Keluar</button>
         </header>
 
-        <div class="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 md:grid-cols-5 gap-6">
+        <main class="max-w-5xl mx-auto w-full p-6 space-y-6 flex-1">
+            <!-- Form Input RT -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <h3 class="font-bold text-lg text-slate-800 mb-4 flex items-center gap-2"><i data-feather="edit" class="text-emerald-500"></i> Buat Laporan Baru</h3>
+                <form onsubmit="kirimFormulirRT(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Nama Pemohon</label>
+                        <input type="text" id="rtInputNama" required class="w-full border border-slate-300 rounded p-2 text-sm focus:border-emerald-500 bg-slate-50">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Nomor Handphone (WA)</label>
+                        <input type="text" id="rtInputWA" required class="w-full border border-slate-300 rounded p-2 text-sm focus:border-emerald-500 bg-slate-50">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Jenis Layanan</label>
+                        <select id="rtInputLayanan" required class="w-full border border-slate-300 rounded p-2 text-sm focus:border-emerald-500 bg-slate-50">
+                            <option value="">Pilih Jenis Layanan...</option>
+                            <option>Surat Pengantar SKCK</option>
+                            <option>Surat Keterangan Usaha</option>
+                            <option>Surat Keterangan Domisili</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Keterangan / Keperluan</label>
+                        <textarea id="rtInputKeperluan" required rows="2" class="w-full border border-slate-300 rounded p-2 text-sm focus:border-emerald-500 bg-slate-50"></textarea>
+                    </div>
+                    <div class="md:col-span-2 flex justify-end mt-2">
+                        <button type="submit" class="bg-emerald-600 text-white font-bold text-sm px-6 py-2.5 rounded shadow hover:bg-emerald-700">Kirim Data ke Desa</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Tabel Riwayat RT (Hanya data miliknya) -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <h3 class="font-bold text-lg text-slate-800 mb-4 flex items-center gap-2"><i data-feather="clock" class="text-emerald-500"></i> Riwayat Layanan Saya</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-100 text-slate-600 border-b">
+                            <tr>
+                                <th class="py-2 px-3">Tiket</th>
+                                <th class="py-2 px-3">Nama Pemohon</th>
+                                <th class="py-2 px-3">Layanan</th>
+                                <th class="py-2 px-3">Status Desa</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelDataRT" class="divide-y divide-slate-100">
+                            <!-- Data JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ================= DASHBOARD OPERATOR (GAYA ADMINLTE + FILTER RT) ================= -->
+    <div id="dashboardOperator" class="hidden h-full flex flex-col md:flex-row">
+        
+        <!-- SIDEBAR KIRI -->
+        <aside class="w-full md:w-64 bg-[#222d32] text-slate-300 flex flex-col h-full shrink-0 overflow-y-auto">
+            <div class="h-14 bg-[#367fa9] text-white flex items-center justify-center font-bold text-lg tracking-wide shrink-0">AdminPelayanan</div>
             
-            <!-- Sidebar -->
-            <nav id="sidebarMenu" class="md:col-span-1 space-y-2">
-                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-4 text-center">
-                    <div class="inline-block p-3 bg-emerald-100 text-emerald-700 rounded-full mb-2">
-                        <i id="roleIcon" data-feather="user"></i>
-                    </div>
-                    <p id="roleTitle" class="font-bold text-slate-800 text-base">Peran</p>
+            <div class="p-4 flex items-center gap-3 border-b border-slate-700">
+                <div class="w-12 h-12 rounded-full bg-slate-600 flex items-center justify-center text-white font-bold text-xl"><i data-feather="user"></i></div>
+                <div>
+                    <p id="opGreetingName" class="text-sm font-bold text-white leading-tight">Operator</p>
+                    <p class="text-xs text-emerald-400 flex items-center gap-1 mt-0.5"><span class="w-2 h-2 rounded-full bg-emerald-400 block"></span> Online</p>
                 </div>
-                <div id="menuContainer" class="space-y-1"></div>
-            </nav>
+            </div>
 
-            <!-- Main Content -->
-            <main id="mainContent" class="md:col-span-4">
+            <nav class="flex-1 py-2">
+                <p class="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 mt-2">Filter Status</p>
                 
-                <!-- MODUL: FORMULIR PELAYANAN (Bisa diakses Warga & RT) -->
-                <div id="modul-formulir" class="hidden space-y-6 animasi-muncul">
-                    <div class="bg-white p-6 rounded-xl border-t-8 border-emerald-600 shadow-sm">
-                        <h3 class="text-xl font-bold mb-1">Formulir Layanan Administrasi</h3>
-                        <p class="text-sm text-slate-500 mb-6">Silakan lengkapi data identitas dan unggah berkas yang diperlukan.</p>
+                <button onclick="filterOpStatus('Semua')" id="menu-Semua" class="op-menu w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-[#1e282c] hover:text-white transition bg-[#1e282c] border-l-4 border-[#3c8dbc] text-white">
+                    <i data-feather="database" class="w-4 h-4"></i> Semua Data
+                </button>
+                <button onclick="filterOpStatus('Menunggu')" id="menu-Menunggu" class="op-menu w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-[#1e282c] hover:text-white transition border-l-4 border-transparent text-slate-400">
+                    <i data-feather="message-square" class="w-4 h-4"></i> Layanan Masuk
+                </button>
+                <button onclick="filterOpStatus('Diproses')" id="menu-Diproses" class="op-menu w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-[#1e282c] hover:text-white transition border-l-4 border-transparent text-slate-400">
+                    <i data-feather="refresh-cw" class="w-4 h-4"></i> Layanan Diproses
+                </button>
+                <button onclick="filterOpStatus('Selesai')" id="menu-Selesai" class="op-menu w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-[#1e282c] hover:text-white transition border-l-4 border-transparent text-slate-400">
+                    <i data-feather="check-circle" class="w-4 h-4"></i> Layanan Selesai
+                </button>
+                <button onclick="filterOpStatus('Dibatalkan')" id="menu-Dibatalkan" class="op-menu w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-[#1e282c] hover:text-white transition border-l-4 border-transparent text-slate-400">
+                    <i data-feather="x-circle" class="w-4 h-4"></i> Layanan Dibatalkan
+                </button>
+            </nav>
+        </aside>
+
+        <!-- KONTEN UTAMA KANAN -->
+        <main class="flex-1 flex flex-col h-full overflow-hidden bg-[#ecf0f5]">
+            <!-- Navbar Atas -->
+            <header class="h-14 bg-[#3c8dbc] text-white flex items-center justify-between px-4 shadow shrink-0">
+                <div class="flex items-center gap-3">
+                    <i data-feather="menu" class="hidden md:block"></i>
+                    <span class="font-medium text-sm">Halaman Data pengaduan / Layanan</span>
+                </div>
+                <button onclick="prosesLogout()" class="text-sm font-medium hover:text-rose-200 flex items-center gap-1"><i data-feather="power" class="w-4 h-4"></i> Logout</button>
+            </header>
+
+            <div class="flex-1 overflow-y-auto p-4 custom-scroll space-y-4">
+                
+                <!-- 4 Kartu Rangkuman -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-[#00c0ef] text-white rounded p-4 relative overflow-hidden shadow-sm flex flex-col justify-between cursor-pointer" onclick="filterOpStatus('Menunggu')">
+                        <div><h3 id="countMasuk" class="text-3xl font-bold mb-1">0</h3><p class="text-sm">Layanan Masuk</p></div>
+                        <i data-feather="message-square" class="absolute -right-2 -bottom-2 w-20 h-20 opacity-20 text-black"></i>
+                    </div>
+                    <div class="bg-[#f39c12] text-white rounded p-4 relative overflow-hidden shadow-sm flex flex-col justify-between cursor-pointer" onclick="filterOpStatus('Diproses')">
+                        <div><h3 id="countProses" class="text-3xl font-bold mb-1">0</h3><p class="text-sm">Layanan Diproses</p></div>
+                        <i data-feather="refresh-cw" class="absolute -right-2 -bottom-2 w-20 h-20 opacity-20 text-black"></i>
+                    </div>
+                    <div class="bg-[#00a65a] text-white rounded p-4 relative overflow-hidden shadow-sm flex flex-col justify-between cursor-pointer" onclick="filterOpStatus('Selesai')">
+                        <div><h3 id="countSelesai" class="text-3xl font-bold mb-1">0</h3><p class="text-sm">Layanan Selesai</p></div>
+                        <i data-feather="check-square" class="absolute -right-2 -bottom-2 w-20 h-20 opacity-20 text-black"></i>
+                    </div>
+                    <div class="bg-[#dd4b39] text-white rounded p-4 relative overflow-hidden shadow-sm flex flex-col justify-between cursor-pointer" onclick="filterOpStatus('Dibatalkan')">
+                        <div><h3 id="countBatal" class="text-3xl font-bold mb-1">0</h3><p class="text-sm">Layanan Dibatalkan</p></div>
+                        <i data-feather="x-circle" class="absolute -right-2 -bottom-2 w-20 h-20 opacity-20 text-black"></i>
+                    </div>
+                </div>
+
+                <!-- Tabel Data Utama -->
+                <div class="bg-white border-t-2 border-[#3c8dbc] shadow-sm rounded-b">
+                    <div class="bg-[#3c8dbc] text-white px-4 py-2 text-sm font-bold flex flex-wrap justify-between items-center gap-2">
+                        <span id="judulTabelOp">Semua Data Layanan</span>
                         
-                        <form onsubmit="kirimFormulir(event)" class="space-y-5">
-                            <!-- Bagian 1: Identitas -->
-                            <div class="p-4 bg-slate-50 rounded-lg border border-slate-200 space-y-4">
-                                <h4 class="font-bold text-slate-700 text-sm border-b pb-2">Bagian 1: Identitas Pemohon</h4>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-xs font-semibold text-slate-600 mb-1">NIK (Wajib)</label>
-                                        <input type="number" id="inputNIK" required class="w-full border border-slate-300 rounded p-2 text-sm focus:border-emerald-600">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Lengkap (Wajib)</label>
-                                        <input type="text" id="inputNama" required class="w-full border border-slate-300 rounded p-2 text-sm focus:border-emerald-600">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Nomor WhatsApp Aktif (Wajib)</label>
-                                        <input type="text" id="inputWA" required placeholder="Contoh: 081234567890" class="w-full border border-slate-300 rounded p-2 text-sm focus:border-emerald-600">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-semibold text-slate-600 mb-1">RT / Lingkungan</label>
-                                        <select id="inputRT" required class="w-full border border-slate-300 rounded p-2 text-sm focus:border-emerald-600">
-                                            <option value="">Pilih RT...</option>
-                                            <option>RT 01</option><option>RT 02</option><option>RT 03</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Bagian 2: Jenis Layanan -->
-                            <div class="p-4 bg-slate-50 rounded-lg border border-slate-200 space-y-4">
-                                <h4 class="font-bold text-slate-700 text-sm border-b pb-2">Bagian 2: Jenis Layanan Surat</h4>
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Pilihan Dokumen</label>
-                                    <select id="inputLayanan" required class="w-full border border-slate-300 rounded p-2 text-sm focus:border-emerald-600">
-                                        <option value="">Pilih Dokumen...</option>
-                                        <option>Surat Keterangan Usaha</option>
-                                        <option>Surat Pengantar SKCK</option>
-                                        <option>Surat Keterangan Tidak Mampu</option>
-                                        <option>Surat Keterangan Domisili</option>
-                                        <option>Keterangan Kelahiran/Kematian</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Keperluan Pembuatan Surat</label>
-                                    <textarea id="inputKeperluan" required rows="2" placeholder="Jelaskan keperluan secara singkat..." class="w-full border border-slate-300 rounded p-2 text-sm focus:border-emerald-600"></textarea>
-                                </div>
-                                <!-- Opsi khusus jika RT yang mengisi -->
-                                <div id="panelCatatanRT" class="hidden pt-2">
-                                    <label class="block text-xs font-bold text-rose-600 mb-1">Catatan Tambahan RT (Validasi Awal / Masalah Lingkungan)</label>
-                                    <textarea id="inputCatatanRT" rows="2" placeholder="Isi jika ada catatan khusus untuk aparat desa..." class="w-full border border-rose-300 rounded p-2 text-sm focus:border-rose-600 bg-rose-50"></textarea>
-                                </div>
-                            </div>
-
-                            <!-- Bagian 3: Unggah Berkas -->
-                            <div class="p-4 bg-slate-50 rounded-lg border border-slate-200 space-y-4">
-                                <h4 class="font-bold text-slate-700 text-sm border-b pb-2">Bagian 3: Unggah Berkas Persyaratan</h4>
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Foto/Scan KTP & KK (Gabung dalam 1 file ZIP/PDF atau foto)</label>
-                                    <input type="file" id="inputBerkas" required class="w-full border border-slate-300 rounded p-1.5 text-sm bg-white">
-                                </div>
-                            </div>
-
-                            <button type="submit" class="w-full bg-emerald-600 text-white font-bold text-sm px-4 py-3 rounded-lg hover:bg-emerald-700 shadow-md">Kirim Permohonan</button>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- MODUL: MONITORING OPERATOR DESA (Gaya Google Sheets) -->
-                <div id="modul-monitoring" class="hidden space-y-6 animasi-muncul">
-                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-lg font-bold flex items-center gap-2"><i data-feather="trello" class="text-emerald-600"></i> Dashboard Monitoring Desa</h3>
-                            <span class="text-xs bg-slate-100 px-2 py-1 border rounded text-slate-500">Auto-refresh aktif</span>
-                        </div>
-                        
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left text-sm border-collapse">
-                                <thead class="bg-slate-800 text-white">
-                                    <tr>
-                                        <th class="py-2 px-3 border border-slate-700 text-xs">Timestamp</th>
-                                        <th class="py-2 px-3 border border-slate-700 text-xs">Nama Pemohon</th>
-                                        <th class="py-2 px-3 border border-slate-700 text-xs">No. WA</th>
-                                        <th class="py-2 px-3 border border-slate-700 text-xs">RT</th>
-                                        <th class="py-2 px-3 border border-slate-700 text-xs">Jenis Layanan</th>
-                                        <th class="py-2 px-3 border border-slate-700 text-xs">Status Permohonan</th>
-                                        <th class="py-2 px-3 border border-slate-700 text-xs">Catatan Kendala</th>
-                                        <th class="py-2 px-3 border border-slate-700 text-xs text-center">Aksi / Verifikasi</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tabelOperator" class="bg-white">
-                                    <!-- Data dari JS -->
-                                </tbody>
-                            </table>
+                        <!-- FILTER PILIHAN RT (HANYA ADA DI OPERATOR) -->
+                        <div class="flex items-center gap-2 text-xs">
+                            <span>Filter Lingkungan:</span>
+                            <select id="opFilterRT" onchange="renderTabelOperator()" class="text-slate-800 rounded px-2 py-1 outline-none">
+                                <option value="Semua">Semua RT (1-19)</option>
+                                <!-- Option digenerate oleh JS -->
+                            </select>
                         </div>
                     </div>
-                </div>
-
-                <!-- MODUL: STATUS WARGA / RT -->
-                <div id="modul-status-warga" class="hidden space-y-6 animasi-muncul">
-                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                        <h3 class="text-lg font-bold mb-4">Riwayat Permohonan Saya</h3>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left text-sm">
-                                <thead class="bg-slate-100 text-slate-600 border-b">
-                                    <tr>
-                                        <th class="py-2 px-3">Tanggal</th>
-                                        <th class="py-2 px-3">Nama Pemohon</th>
-                                        <th class="py-2 px-3">Jenis Layanan</th>
-                                        <th class="py-2 px-3">Status</th>
-                                        <th class="py-2 px-3">Keterangan / Kendala</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tabelStatusWarga" class="divide-y divide-slate-100">
-                                    <!-- Data dari JS -->
-                                </tbody>
-                            </table>
-                        </div>
+                    
+                    <div class="overflow-x-auto custom-scroll p-4">
+                        <table class="w-full text-left text-xs md:text-sm">
+                            <thead class="border-b-2 border-slate-200 text-slate-600 font-bold">
+                                <tr>
+                                    <th class="py-2 pr-2">Pengirim</th>
+                                    <th class="py-2 pr-2">Tgl / Tiket</th>
+                                    <th class="py-2 pr-2">Nama & WA</th>
+                                    <th class="py-2 pr-2">Isi Laporan / Layanan</th>
+                                    <th class="py-2 pr-2">Status</th>
+                                    <th class="py-2 text-center">Aksi Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelDataOperator" class="divide-y divide-slate-100">
+                                <!-- Data JS -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-
-            </main>
-        </div>
+            </div>
+        </main>
     </div>
 
     <script src="script.js"></script>
