@@ -1,6 +1,6 @@
 // Mengimpor library Firebase Firestore secara Modular
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, onSnapshot, updateDoc, deleteDoc, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js";
 
 // Konfigurasi Firebase dari akun Anda
 const firebaseConfig = {
@@ -13,33 +13,32 @@ const firebaseConfig = {
     appId: "1:591465838495:web:23c89115c0bd01d8d0afaa"
 };
 
-// Inisialisasi Firebase & Firestore
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 const databaseAkun = {
     'operator': { role: 'operator', nama: 'Operator Desa' },
-    'super': { role: 'super', nama: 'Super Admin' }
+    'super': { role: 'super', nama: 'Super Admin Desa' }
 };
 
 let dataPermohonan = [];
+let jenisLayananList = [];
 let currentUser = null; 
 let currentStatusOp = 'Semua';
 
-// Inisialisasi Icon setelah halaman siap
 document.addEventListener("DOMContentLoaded", () => {
     feather.replace();
+    muatJenisLayanan();
 });
 
 // =====================================
-// LISTENER REAL-TIME FIREBASE
+// LISTENER REAL-TIME DATA & LAYANAN
 // =====================================
 onSnapshot(collection(db, "data_pelayanan"), (snapshot) => {
     dataPermohonan = [];
     snapshot.forEach((doc) => {
         dataPermohonan.push({ id: doc.id, ...doc.data() });
     });
-    
     dataPermohonan.sort((a, b) => b.waktuSistem - a.waktuSistem);
 
     if (currentUser) {
@@ -51,8 +50,48 @@ onSnapshot(collection(db, "data_pelayanan"), (snapshot) => {
     }
 });
 
+// Sinkronisasi Jenis Layanan Real-Time dari Firestore
+function muatJenisLayanan() {
+    onSnapshot(doc(db, "pengaturan", "layanan_desa"), (docSnap) => {
+        if (docSnap.exists() && docSnap.data().list) {
+            jenisLayananList = docSnap.data().list;
+        } else {
+            // Default awal jika belum diatur Super Admin
+            jenisLayananList = [
+                "Surat Pengantar SKCK",
+                "Surat Keterangan Usaha",
+                "Surat Keterangan Domisili"
+            ];
+            simpanJenisLayananKeDB();
+        }
+        updateDropdownLayananRT();
+        if(currentUser && currentUser.role === 'super') {
+            renderListLayananSuper();
+        }
+    });
+}
+
+async function simpanJenisLayananKeDB() {
+    try {
+        await setDoc(doc(db, "pengaturan", "layanan_desa"), { list: jenisLayananList });
+    } catch (e) {
+        console.error("Gagal menyimpan jenis layanan: ", e);
+    }
+}
+
+function updateDropdownLayananRT() {
+    const select = document.getElementById('rtInputLayanan');
+    if (!select) return;
+    let valSelected = select.value;
+    select.innerHTML = '<option value="">Pilih Jenis Layanan...</option>';
+    jenisLayananList.forEach(layanan => {
+        select.innerHTML += `<option value="${layanan}">${layanan}</option>`;
+    });
+    select.value = valSelected;
+}
+
 // =====================================
-// LOGIKA LOGIN (DIJAMIN MASUK)
+// LOGIKA LOGIN
 // =====================================
 window.prosesLogin = function(event) {
     event.preventDefault();
@@ -87,11 +126,24 @@ function jalankanDashboard() {
         document.getElementById('dashboardRT').classList.remove('hidden');
         document.getElementById('dashboardOperator').classList.add('hidden');
         document.getElementById('rtNamaHeader').innerText = currentUser.nama;
+        updateDropdownLayananRT();
         renderTabelRT();
     } else {
         document.getElementById('dashboardOperator').classList.remove('hidden');
         document.getElementById('dashboardRT').classList.add('hidden');
         document.getElementById('opGreetingName').innerText = currentUser.nama;
+        
+        // Tampilkan panel Super Admin jika rolenya super
+        const panelSuper = document.getElementById('panelSuperAdmin');
+        if (currentUser.role === 'super') {
+            panelSuper.classList.remove('hidden');
+            document.getElementById('sidebarTitle').innerText = "Super Admin Pusat";
+            renderListLayananSuper();
+        } else {
+            panelSuper.classList.add('hidden');
+            document.getElementById('sidebarTitle').innerText = "Operator Desa";
+        }
+
         setupFilterRTDropdown();
         renderTabelOperator();
     }
@@ -108,7 +160,52 @@ window.prosesLogout = function() {
 }
 
 // =====================================
-// FUNGSI BANTU: AUTO-COMPRESS GAMBAR
+// FITUR SUPER ADMIN: KELOLA LAYANAN
+// =====================================
+window.tambahJenisLayanan = async function() {
+    let input = document.getElementById('inputLayananBaru');
+    let namaLayanan = input.value.trim();
+    if(!namaLayanan) {
+        alert("Nama layanan tidak boleh kosong!");
+        return;
+    }
+    if(jenisLayananList.includes(namaLayanan)) {
+        alert("Jenis layanan tersebut sudah ada!");
+        return;
+    }
+    jenisLayananList.push(namaLayanan);
+    await simpanJenisLayananKeDB();
+    input.value = '';
+    renderListLayananSuper();
+    alert("Jenis layanan baru berhasil ditambahkan secara real-time!");
+}
+
+window.hapusJenisLayanan = async function(index) {
+    if(jenisLayananList.length <= 1) {
+        alert("Minimal harus ada 1 jenis layanan aktif.");
+        return;
+    }
+    if(confirm(`Yakin ingin menghapus layanan "${jenisLayananList[index]}"?`)) {
+        jenisLayananList.splice(index, 1);
+        await simpanJenisLayananKeDB();
+        renderListLayananSuper();
+    }
+}
+
+function renderListLayananSuper() {
+    const container = document.getElementById('daftarListLayanan');
+    if(!container) return;
+    container.innerHTML = '';
+    jenisLayananList.forEach((layanan, index) => {
+        let tag = document.createElement('div');
+        tag.className = "bg-purple-50 border border-purple-200 text-purple-800 text-xs px-3 py-1.5 rounded-full flex items-center gap-2 font-medium";
+        tag.innerHTML = `<span>${layanan}</span> <button onclick="hapusJenisLayanan(${index})" class="text-rose-600 hover:text-rose-800 font-bold">&times;</button>`;
+        container.appendChild(tag);
+    });
+}
+
+// =====================================
+// FUNGSI AUTO-COMPRESS GAMBAR
 // =====================================
 function kompresGambar(file, maxWidth = 800, quality = 0.6) {
     return new Promise((resolve) => {
@@ -141,7 +238,7 @@ function kompresGambar(file, maxWidth = 800, quality = 0.6) {
 }
 
 // =====================================
-// LOGIKA RT (KIRIM DATA & AUTO COMPRESS)
+// LOGIKA RT (KIRIM DATA)
 // =====================================
 window.kirimFormulirRT = async function(e) {
     e.preventDefault();
@@ -252,7 +349,7 @@ function renderTabelRT() {
 }
 
 // =====================================
-// LOGIKA OPERATOR
+// LOGIKA OPERATOR & SUPER ADMIN
 // =====================================
 function setupFilterRTDropdown() {
     const dropdown = document.getElementById('opFilterRT');
@@ -335,12 +432,17 @@ window.renderTabelOperator = function() {
             </td>
             <td class="py-3 pr-2 align-top ${statusColor} text-xs">${data.status}</td>
             <td class="py-3 align-top text-center">
-                <select onchange="ubahStatusDariOperator('${data.id}', this.value)" class="text-xs border border-slate-300 rounded p-1 focus:outline-none cursor-pointer">
-                    <option value="Menunggu" ${data.status === 'Menunggu' ? 'selected' : ''}>Menunggu</option>
-                    <option value="Diproses" ${data.status === 'Diproses' ? 'selected' : ''}>Diproses</option>
-                    <option value="Selesai" ${data.status === 'Selesai' ? 'selected' : ''}>Selesai</option>
-                    <option value="Dibatalkan" ${data.status === 'Dibatalkan' ? 'selected' : ''}>Dibatalkan</option>
-                </select>
+                <div class="flex items-center justify-center gap-2">
+                    <select onchange="ubahStatusDariOperator('${data.id}', this.value)" class="text-xs border border-slate-300 rounded p-1 focus:outline-none cursor-pointer">
+                        <option value="Menunggu" ${data.status === 'Menunggu' ? 'selected' : ''}>Menunggu</option>
+                        <option value="Diproses" ${data.status === 'Diproses' ? 'selected' : ''}>Diproses</option>
+                        <option value="Selesai" ${data.status === 'Selesai' ? 'selected' : ''}>Selesai</option>
+                        <option value="Dibatalkan" ${data.status === 'Dibatalkan' ? 'selected' : ''}>Dibatalkan</option>
+                    </select>
+                    <button onclick="hapusLaporanOperator('${data.id}')" class="bg-rose-500 hover:bg-rose-600 text-white p-1 rounded text-xs transition" title="Hapus Laporan">
+                        <i data-feather="trash-2" class="w-3.5 h-3.5"></i>
+                    </button>
+                </div>
             </td>
         `;
         tbody.appendChild(tr);
@@ -377,5 +479,17 @@ window.ubahStatusDariOperator = async function(id, newStatus) {
         });
     } catch (error) {
         alert("Gagal memperbarui status: " + error.message);
+    }
+}
+
+// Fitur Hapus Laporan untuk Operator / Super Admin
+window.hapusLaporanOperator = async function(id) {
+    if(confirm("Apakah Anda yakin ingin menghapus permanen laporan permohonan ini dari sistem desa?")) {
+        try {
+            await deleteDoc(doc(db, "data_pelayanan", id));
+            alert("Laporan berhasil dihapus.");
+        } catch (error) {
+            alert("Gagal menghapus laporan: " + error.message);
+        }
     }
 }
