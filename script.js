@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
 import { getFirestore, collection, addDoc, onSnapshot, updateDoc, deleteDoc, doc, setDoc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js";
 
+// Konfigurasi Firebase Anda
 const firebaseConfig = {
     apiKey: "AIzaSyCsQemf5eHXIe852eCdJUyLCWJg0dSRmic",
     authDomain: "pelanyan-desa.firebaseapp.com",
@@ -29,6 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
     muatJenisLayanan();
 });
 
+// Listener Data Layanan (Laporan)
 onSnapshot(collection(db, "data_pelayanan"), (snapshot) => {
     dataPermohonan = [];
     snapshot.forEach((docSnap) => {
@@ -46,16 +48,49 @@ onSnapshot(collection(db, "data_pelayanan"), (snapshot) => {
 });
 
 // ==========================================
+// FUNGSI DETEKSI PERANGKAT DAN IP ADDRESS
+// ==========================================
+function getDeviceInfo() {
+    const ua = navigator.userAgent;
+    let device = "PC/Laptop";
+    if (/mobile/i.test(ua)) device = "HP/Mobile";
+    else if (/tablet/i.test(ua)) device = "Tablet";
+
+    let os = "OS Lain";
+    if (/windows/i.test(ua)) os = "Windows";
+    else if (/mac/i.test(ua)) os = "MacOS";
+    else if (/android/i.test(ua)) os = "Android";
+    else if (/iphone|ipad|ipod/i.test(ua)) os = "iOS";
+
+    return `${device} (${os})`;
+}
+
+async function getClientIP() {
+    try {
+        let response = await fetch('https://api.ipify.org?format=json');
+        let data = await response.json();
+        return data.ip;
+    } catch (e) {
+        return "IP Tidak Diketahui";
+    }
+}
+
+// ==========================================
 // FUNGSI LOG AKTIVITAS (AUDIT TRAIL)
 // ==========================================
 async function catatLog(aksi, detail) {
     let pengguna = currentUser ? currentUser.nama : "Sistem";
+    let device = getDeviceInfo();
+    let ip = await getClientIP();
+
     try {
         await addDoc(collection(db, "logs_aktivitas"), {
             waktu: serverTimestamp(),
             pengguna: pengguna,
             aksi: aksi,
-            detail: detail
+            detail: detail,
+            device: device,
+            ip: ip
         });
     } catch (error) {
         console.error("Gagal mencatat log aktivitas:", error);
@@ -70,7 +105,7 @@ function muatLogAktivitas() {
     onSnapshot(q, (snapshot) => {
         tabelLog.innerHTML = '';
         if (snapshot.empty) {
-            tabelLog.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-slate-500 italic">Belum ada aktivitas terekam.</td></tr>';
+            tabelLog.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-slate-500 italic">Belum ada aktivitas terekam.</td></tr>';
             return;
         }
 
@@ -83,11 +118,15 @@ function muatLogAktivitas() {
             }
             
             tabelLog.innerHTML += `
-                <tr class="hover:bg-slate-50 border-b border-slate-100">
+                <tr class="hover:bg-slate-50 border-b border-slate-100 align-top">
                     <td class="py-2 px-3 text-slate-500">${waktuAksi}</td>
                     <td class="py-2 px-3 font-bold text-slate-700">${data.pengguna}</td>
                     <td class="py-2 px-3">
                         <span class="bg-slate-200 text-slate-800 px-2 py-1 rounded font-semibold">${data.aksi}</span>
+                    </td>
+                    <td class="py-2 px-3">
+                        <span class="block text-xs font-bold text-slate-700">${data.device || '-'}</span>
+                        <span class="block text-[10px] text-blue-600 font-mono">${data.ip || '-'}</span>
                     </td>
                     <td class="py-2 px-3 text-slate-600">${data.detail}</td>
                 </tr>
@@ -95,7 +134,6 @@ function muatLogAktivitas() {
         });
     });
 }
-
 
 // ==========================================
 // MANAJEMEN JENIS LAYANAN DESA
@@ -135,7 +173,7 @@ function updateDropdownLayananRT() {
     jenisLayananList.forEach(layanan => {
         select.innerHTML += `<option value="${layanan}">${layanan}</option>`;
     });
-    select.value = valSelected;
+    select.value = valSelected; // Pertahankan pilihan jika ada
 }
 
 window.tambahJenisLayanan = async function() {
@@ -271,7 +309,7 @@ function bukaDashboard() {
             if (panelSuper) panelSuper.classList.remove('hidden');
             if (sidebarTitle) sidebarTitle.innerText = "Super Admin Pusat";
             renderListLayananSuper();
-            muatLogAktivitas(); // Menampilkan tabel riwayat aktivitas
+            muatLogAktivitas(); // Load log
         } else {
             if (panelSuper) panelSuper.classList.add('hidden');
             if (sidebarTitle) sidebarTitle.innerText = "Operator Desa";
