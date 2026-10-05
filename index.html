@@ -134,13 +134,35 @@
 
             <div class="flex-1 overflow-y-auto p-3 md:p-4 custom-scroll space-y-4">
                 
-                <div id="panelSuperAdmin" class="hidden bg-white p-4 rounded shadow-sm border-l-4 border-purple-600">
-                    <h4 class="font-bold text-sm text-purple-800 mb-2 flex items-center gap-2"><i data-feather="settings" class="w-4 h-4"></i> Panel Super Admin: Pengaturan Jenis Layanan Desa</h4>
-                    <div class="flex gap-2 mb-3">
-                        <input type="text" id="inputLayananBaru" placeholder="Nama jenis layanan baru..." class="flex-1 border border-slate-300 rounded p-2 text-xs md:text-sm focus:outline-none focus:border-purple-600">
-                        <button onclick="tambahJenisLayanan()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs md:text-sm px-4 py-2 rounded transition flex items-center gap-1"><i data-feather="plus" class="w-4 h-4"></i> Tambah Layanan</button>
+                <!-- PANEL SUPER ADMIN (LAYANAN & LOG) -->
+                <div id="panelSuperAdmin" class="hidden space-y-4 mb-4">
+                    <div class="bg-white p-4 rounded shadow-sm border-l-4 border-purple-600">
+                        <h4 class="font-bold text-sm text-purple-800 mb-2 flex items-center gap-2"><i data-feather="settings" class="w-4 h-4"></i> Panel Super Admin: Pengaturan Jenis Layanan Desa</h4>
+                        <div class="flex gap-2 mb-3">
+                            <input type="text" id="inputLayananBaru" placeholder="Nama jenis layanan baru..." class="flex-1 border border-slate-300 rounded p-2 text-xs md:text-sm focus:outline-none focus:border-purple-600">
+                            <button onclick="tambahJenisLayanan()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs md:text-sm px-4 py-2 rounded transition flex items-center gap-1"><i data-feather="plus" class="w-4 h-4"></i> Tambah Layanan</button>
+                        </div>
+                        <div class="flex flex-col md:flex-row flex-wrap gap-2" id="daftarListLayanan"></div>
                     </div>
-                    <div class="flex flex-wrap gap-2" id="daftarListLayanan"></div>
+
+                    <div class="bg-white p-4 rounded shadow-sm border-l-4 border-rose-600">
+                        <h4 class="font-bold text-sm text-rose-800 mb-2 flex items-center gap-2"><i data-feather="file-text" class="w-4 h-4"></i> Log Aktivitas Sistem (Audit Trail)</h4>
+                        <div class="overflow-x-auto border border-slate-200 rounded max-h-64 custom-scroll">
+                            <table class="w-full text-left text-xs whitespace-nowrap">
+                                <thead class="bg-slate-100 text-slate-600 border-b sticky top-0">
+                                    <tr>
+                                        <th class="py-2 px-3">Waktu</th>
+                                        <th class="py-2 px-3">Pengguna</th>
+                                        <th class="py-2 px-3">Aksi</th>
+                                        <th class="py-2 px-3">Detail</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabelLogAktivitas" class="divide-y divide-slate-100">
+                                    <tr><td colspan="4" class="text-center py-4 text-slate-500 italic">Memuat log aktivitas...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
