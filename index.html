@@ -14,11 +14,11 @@
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans h-screen overflow-hidden">
 
-    <!-- ================= HALAMAN LOGIN ================= -->
+    <!-- HALAMAN LOGIN -->
     <div id="loginPage" class="flex items-center justify-center h-full bg-slate-800 relative z-50">
         <div class="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md border-t-4 border-blue-600">
             <div class="text-center mb-6">
-                <h2 class="text-2xl font-bold text-slate-800">Portal Desa</h2>
+                <h2 class="text-2xl font-bold text-slate-800">Portal Desa Real-Time</h2>
                 <p class="text-sm text-slate-500">Silakan masuk sesuai akun Anda</p>
             </div>
             
@@ -30,18 +30,10 @@
                 </div>
                 <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded hover:bg-blue-700 transition shadow-md">Masuk</button>
             </form>
-            
-            <div class="mt-6 p-4 bg-slate-100 rounded text-xs text-slate-600 border border-slate-200">
-                <p class="font-bold mb-1">Daftar Akun Simulasi (Password: 123):</p>
-                <ul class="space-y-1 ml-2">
-                    <li>&bull; <b>rt1</b> sampai <b>rt19</b> &rarr; Untuk masing-masing Ketua RT</li>
-                    <li>&bull; <b>operator</b> &rarr; Untuk Admin Pengelola</li>
-                </ul>
-            </div>
         </div>
     </div>
 
-    <!-- ================= DASHBOARD RT ================= -->
+    <!-- DASHBOARD RT -->
     <div id="dashboardRT" class="hidden h-full flex flex-col overflow-y-auto bg-slate-50">
         <header class="bg-emerald-600 text-white shadow-md py-4 px-6 flex justify-between items-center shrink-0">
             <div>
@@ -52,7 +44,6 @@
         </header>
 
         <main class="max-w-5xl mx-auto w-full p-6 space-y-6 flex-1">
-            <!-- Form Input RT -->
             <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                 <h3 class="font-bold text-lg text-slate-800 mb-4 flex items-center gap-2"><i data-feather="edit" class="text-emerald-500"></i> Buat Laporan Baru</h3>
                 <form onsubmit="kirimFormulirRT(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -77,19 +68,18 @@
                         <label class="block text-xs font-bold text-slate-600 mb-1">Keterangan / Keperluan</label>
                         <textarea id="rtInputKeperluan" required rows="2" class="w-full border border-slate-300 rounded p-2 text-sm focus:border-emerald-500 bg-slate-50"></textarea>
                     </div>
-                    <!-- FITUR BARU: UPLOAD BERKAS OLEH RT -->
                     <div class="md:col-span-2 bg-slate-50 p-3 border border-slate-200 rounded">
-                        <label class="block text-xs font-bold text-slate-600 mb-1">Upload Data Keperluan / Lampiran Berkas</label>
-                        <input type="file" id="rtInputBerkas" required class="w-full text-sm file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-emerald-100 file:text-emerald-700 hover:file:bg-emerald-200">
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Upload Data Lampiran (Maksimal 800 KB)</label>
+                        <input type="file" id="rtInputBerkas" required accept="image/*,application/pdf" class="w-full text-sm file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-emerald-100 file:text-emerald-700 hover:file:bg-emerald-200">
                     </div>
 
                     <div class="md:col-span-2 flex justify-end mt-2">
-                        <button type="submit" class="bg-emerald-600 text-white font-bold text-sm px-6 py-2.5 rounded shadow hover:bg-emerald-700">Kirim Data & Berkas ke Desa</button>
+                        <!-- Loading State Button -->
+                        <button type="submit" id="btnKirim" class="bg-emerald-600 text-white font-bold text-sm px-6 py-2.5 rounded shadow hover:bg-emerald-700">Kirim Data & Berkas ke Desa</button>
                     </div>
                 </form>
             </div>
 
-            <!-- Tabel Riwayat RT -->
             <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                 <h3 class="font-bold text-lg text-slate-800 mb-4 flex items-center gap-2"><i data-feather="clock" class="text-emerald-500"></i> Riwayat Layanan Saya</h3>
                 <div class="overflow-x-auto">
@@ -102,21 +92,17 @@
                                 <th class="py-2 px-3">Status Desa</th>
                             </tr>
                         </thead>
-                        <tbody id="tabelDataRT" class="divide-y divide-slate-100">
-                            <!-- Data JS -->
-                        </tbody>
+                        <tbody id="tabelDataRT" class="divide-y divide-slate-100"></tbody>
                     </table>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- ================= DASHBOARD OPERATOR ================= -->
+    <!-- DASHBOARD OPERATOR -->
     <div id="dashboardOperator" class="hidden h-full flex flex-col md:flex-row">
-        
         <aside class="w-full md:w-64 bg-[#222d32] text-slate-300 flex flex-col h-full shrink-0 overflow-y-auto">
             <div class="h-14 bg-[#367fa9] text-white flex items-center justify-center font-bold text-lg tracking-wide shrink-0">AdminPelayanan</div>
-            
             <div class="p-4 flex items-center gap-3 border-b border-slate-700">
                 <div class="w-12 h-12 rounded-full bg-slate-600 flex items-center justify-center text-white font-bold text-xl"><i data-feather="user"></i></div>
                 <div>
@@ -124,22 +110,21 @@
                     <p class="text-xs text-emerald-400 flex items-center gap-1 mt-0.5"><span class="w-2 h-2 rounded-full bg-emerald-400 block"></span> Online</p>
                 </div>
             </div>
-
             <nav class="flex-1 py-2">
                 <p class="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 mt-2">Filter Status</p>
-                <button onclick="filterOpStatus('Semua')" id="menu-Semua" class="op-menu w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-[#1e282c] hover:text-white transition bg-[#1e282c] border-l-4 border-[#3c8dbc] text-white">
+                <button onclick="filterOpStatus('Semua')" id="menu-Semua" class="op-menu w-full flex items-center gap-3 px-4 py-3 text-sm transition bg-[#1e282c] border-l-4 border-[#3c8dbc] text-white">
                     <i data-feather="database" class="w-4 h-4"></i> Semua Data
                 </button>
-                <button onclick="filterOpStatus('Menunggu')" id="menu-Menunggu" class="op-menu w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-[#1e282c] hover:text-white transition border-l-4 border-transparent text-slate-400">
+                <button onclick="filterOpStatus('Menunggu')" id="menu-Menunggu" class="op-menu w-full flex items-center gap-3 px-4 py-3 text-sm transition border-l-4 border-transparent text-slate-400 hover:text-white">
                     <i data-feather="message-square" class="w-4 h-4"></i> Layanan Masuk
                 </button>
-                <button onclick="filterOpStatus('Diproses')" id="menu-Diproses" class="op-menu w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-[#1e282c] hover:text-white transition border-l-4 border-transparent text-slate-400">
+                <button onclick="filterOpStatus('Diproses')" id="menu-Diproses" class="op-menu w-full flex items-center gap-3 px-4 py-3 text-sm transition border-l-4 border-transparent text-slate-400 hover:text-white">
                     <i data-feather="refresh-cw" class="w-4 h-4"></i> Layanan Diproses
                 </button>
-                <button onclick="filterOpStatus('Selesai')" id="menu-Selesai" class="op-menu w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-[#1e282c] hover:text-white transition border-l-4 border-transparent text-slate-400">
+                <button onclick="filterOpStatus('Selesai')" id="menu-Selesai" class="op-menu w-full flex items-center gap-3 px-4 py-3 text-sm transition border-l-4 border-transparent text-slate-400 hover:text-white">
                     <i data-feather="check-circle" class="w-4 h-4"></i> Layanan Selesai
                 </button>
-                <button onclick="filterOpStatus('Dibatalkan')" id="menu-Dibatalkan" class="op-menu w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-[#1e282c] hover:text-white transition border-l-4 border-transparent text-slate-400">
+                <button onclick="filterOpStatus('Dibatalkan')" id="menu-Dibatalkan" class="op-menu w-full flex items-center gap-3 px-4 py-3 text-sm transition border-l-4 border-transparent text-slate-400 hover:text-white">
                     <i data-feather="x-circle" class="w-4 h-4"></i> Layanan Dibatalkan
                 </button>
             </nav>
@@ -149,13 +134,12 @@
             <header class="h-14 bg-[#3c8dbc] text-white flex items-center justify-between px-4 shadow shrink-0">
                 <div class="flex items-center gap-3">
                     <i data-feather="menu" class="hidden md:block"></i>
-                    <span class="font-medium text-sm">Halaman Data Laporan & Berkas</span>
+                    <span class="font-medium text-sm">Real-Time Dashboard Terhubung ke Firebase</span>
                 </div>
                 <button onclick="prosesLogout()" class="text-sm font-medium hover:text-rose-200 flex items-center gap-1"><i data-feather="power" class="w-4 h-4"></i> Logout</button>
             </header>
 
             <div class="flex-1 overflow-y-auto p-4 custom-scroll space-y-4">
-                
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div class="bg-[#00c0ef] text-white rounded p-4 relative overflow-hidden shadow-sm flex flex-col justify-between cursor-pointer" onclick="filterOpStatus('Menunggu')">
                         <div><h3 id="countMasuk" class="text-3xl font-bold mb-1">0</h3><p class="text-sm">Layanan Masuk</p></div>
@@ -182,7 +166,6 @@
                             <span>Filter Lingkungan:</span>
                             <select id="opFilterRT" onchange="renderTabelOperator()" class="text-slate-800 rounded px-2 py-1 outline-none">
                                 <option value="Semua">Semua RT (1-19)</option>
-                                <!-- Option digenerate oleh JS -->
                             </select>
                         </div>
                     </div>
@@ -199,9 +182,7 @@
                                     <th class="py-2 text-center">Aksi Status</th>
                                 </tr>
                             </thead>
-                            <tbody id="tabelDataOperator" class="divide-y divide-slate-100">
-                                <!-- Data JS -->
-                            </tbody>
+                            <tbody id="tabelDataOperator" class="divide-y divide-slate-100"></tbody>
                         </table>
                     </div>
                 </div>
@@ -209,6 +190,7 @@
         </main>
     </div>
 
-    <script src="script.js"></script>
+    <!-- Tipe Module sangat penting agar fungsi import Firebase berjalan -->
+    <script type="module" src="script.js"></script>
 </body>
 </html>
