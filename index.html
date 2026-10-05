@@ -41,7 +41,7 @@
         </div>
     </div>
 
-    <!-- ================= DASHBOARD RT (TAMPILAN SEDERHANA & TERPISAH) ================= -->
+    <!-- ================= DASHBOARD RT ================= -->
     <div id="dashboardRT" class="hidden h-full flex flex-col overflow-y-auto bg-slate-50">
         <header class="bg-emerald-600 text-white shadow-md py-4 px-6 flex justify-between items-center shrink-0">
             <div>
@@ -77,13 +77,19 @@
                         <label class="block text-xs font-bold text-slate-600 mb-1">Keterangan / Keperluan</label>
                         <textarea id="rtInputKeperluan" required rows="2" class="w-full border border-slate-300 rounded p-2 text-sm focus:border-emerald-500 bg-slate-50"></textarea>
                     </div>
+                    <!-- FITUR BARU: UPLOAD BERKAS OLEH RT -->
+                    <div class="md:col-span-2 bg-slate-50 p-3 border border-slate-200 rounded">
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Upload Data Keperluan / Lampiran Berkas</label>
+                        <input type="file" id="rtInputBerkas" required class="w-full text-sm file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-emerald-100 file:text-emerald-700 hover:file:bg-emerald-200">
+                    </div>
+
                     <div class="md:col-span-2 flex justify-end mt-2">
-                        <button type="submit" class="bg-emerald-600 text-white font-bold text-sm px-6 py-2.5 rounded shadow hover:bg-emerald-700">Kirim Data ke Desa</button>
+                        <button type="submit" class="bg-emerald-600 text-white font-bold text-sm px-6 py-2.5 rounded shadow hover:bg-emerald-700">Kirim Data & Berkas ke Desa</button>
                     </div>
                 </form>
             </div>
 
-            <!-- Tabel Riwayat RT (Hanya data miliknya) -->
+            <!-- Tabel Riwayat RT -->
             <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                 <h3 class="font-bold text-lg text-slate-800 mb-4 flex items-center gap-2"><i data-feather="clock" class="text-emerald-500"></i> Riwayat Layanan Saya</h3>
                 <div class="overflow-x-auto">
@@ -92,7 +98,7 @@
                             <tr>
                                 <th class="py-2 px-3">Tiket</th>
                                 <th class="py-2 px-3">Nama Pemohon</th>
-                                <th class="py-2 px-3">Layanan</th>
+                                <th class="py-2 px-3">Layanan & Lampiran</th>
                                 <th class="py-2 px-3">Status Desa</th>
                             </tr>
                         </thead>
@@ -105,10 +111,9 @@
         </main>
     </div>
 
-    <!-- ================= DASHBOARD OPERATOR (GAYA ADMINLTE + FILTER RT) ================= -->
+    <!-- ================= DASHBOARD OPERATOR ================= -->
     <div id="dashboardOperator" class="hidden h-full flex flex-col md:flex-row">
         
-        <!-- SIDEBAR KIRI -->
         <aside class="w-full md:w-64 bg-[#222d32] text-slate-300 flex flex-col h-full shrink-0 overflow-y-auto">
             <div class="h-14 bg-[#367fa9] text-white flex items-center justify-center font-bold text-lg tracking-wide shrink-0">AdminPelayanan</div>
             
@@ -122,7 +127,6 @@
 
             <nav class="flex-1 py-2">
                 <p class="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 mt-2">Filter Status</p>
-                
                 <button onclick="filterOpStatus('Semua')" id="menu-Semua" class="op-menu w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-[#1e282c] hover:text-white transition bg-[#1e282c] border-l-4 border-[#3c8dbc] text-white">
                     <i data-feather="database" class="w-4 h-4"></i> Semua Data
                 </button>
@@ -141,20 +145,17 @@
             </nav>
         </aside>
 
-        <!-- KONTEN UTAMA KANAN -->
         <main class="flex-1 flex flex-col h-full overflow-hidden bg-[#ecf0f5]">
-            <!-- Navbar Atas -->
             <header class="h-14 bg-[#3c8dbc] text-white flex items-center justify-between px-4 shadow shrink-0">
                 <div class="flex items-center gap-3">
                     <i data-feather="menu" class="hidden md:block"></i>
-                    <span class="font-medium text-sm">Halaman Data pengaduan / Layanan</span>
+                    <span class="font-medium text-sm">Halaman Data Laporan & Berkas</span>
                 </div>
                 <button onclick="prosesLogout()" class="text-sm font-medium hover:text-rose-200 flex items-center gap-1"><i data-feather="power" class="w-4 h-4"></i> Logout</button>
             </header>
 
             <div class="flex-1 overflow-y-auto p-4 custom-scroll space-y-4">
                 
-                <!-- 4 Kartu Rangkuman -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div class="bg-[#00c0ef] text-white rounded p-4 relative overflow-hidden shadow-sm flex flex-col justify-between cursor-pointer" onclick="filterOpStatus('Menunggu')">
                         <div><h3 id="countMasuk" class="text-3xl font-bold mb-1">0</h3><p class="text-sm">Layanan Masuk</p></div>
@@ -174,12 +175,9 @@
                     </div>
                 </div>
 
-                <!-- Tabel Data Utama -->
                 <div class="bg-white border-t-2 border-[#3c8dbc] shadow-sm rounded-b">
                     <div class="bg-[#3c8dbc] text-white px-4 py-2 text-sm font-bold flex flex-wrap justify-between items-center gap-2">
                         <span id="judulTabelOp">Semua Data Layanan</span>
-                        
-                        <!-- FILTER PILIHAN RT (HANYA ADA DI OPERATOR) -->
                         <div class="flex items-center gap-2 text-xs">
                             <span>Filter Lingkungan:</span>
                             <select id="opFilterRT" onchange="renderTabelOperator()" class="text-slate-800 rounded px-2 py-1 outline-none">
@@ -196,7 +194,7 @@
                                     <th class="py-2 pr-2">Pengirim</th>
                                     <th class="py-2 pr-2">Tgl / Tiket</th>
                                     <th class="py-2 pr-2">Nama & WA</th>
-                                    <th class="py-2 pr-2">Isi Laporan / Layanan</th>
+                                    <th class="py-2 pr-2">Layanan & Berkas RT</th>
                                     <th class="py-2 pr-2">Status</th>
                                     <th class="py-2 text-center">Aksi Status</th>
                                 </tr>
