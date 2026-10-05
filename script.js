@@ -1,8 +1,8 @@
-
+// Mengimpor library Firebase Firestore secara Modular
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
 import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js";
 
-
+// Konfigurasi Firebase dari akun Anda
 const firebaseConfig = {
     apiKey: "AIzaSyCsQemf5eHXIe852eCdJUyLCWJg0dSRmic",
     authDomain: "pelanyan-desa.firebaseapp.com",
@@ -17,9 +17,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Inisialisasi Icon
-feather.replace();
-
 const databaseAkun = {
     'operator': { role: 'operator', nama: 'Operator Desa' },
     'super': { role: 'super', nama: 'Super Admin' }
@@ -28,6 +25,11 @@ const databaseAkun = {
 let dataPermohonan = [];
 let currentUser = null; 
 let currentStatusOp = 'Semua';
+
+// Inisialisasi Icon setelah halaman siap
+document.addEventListener("DOMContentLoaded", () => {
+    feather.replace();
+});
 
 // =====================================
 // LISTENER REAL-TIME FIREBASE
@@ -50,45 +52,50 @@ onSnapshot(collection(db, "data_pelayanan"), (snapshot) => {
 });
 
 // =====================================
-// LOGIKA LOGIN
+// LOGIKA LOGIN (DIJAMIN MASUK)
 // =====================================
-window.prosesLogin = function(e) {
-    e.preventDefault();
+window.prosesLogin = function(event) {
+    event.preventDefault();
     let user = document.getElementById('loginUsername').value.toLowerCase().trim();
-    let pass = document.getElementById('loginPassword').value;
+    let pass = document.getElementById('loginPassword').value.trim();
+    let errDiv = document.getElementById('loginError');
 
     if (user.startsWith('rt') && pass === '123') {
         let nomorRT = parseInt(user.replace('rt', ''));
         if (nomorRT >= 1 && nomorRT <= 19) {
             let rtFormat = nomorRT < 10 ? `RT 0${nomorRT}` : `RT ${nomorRT}`;
             currentUser = { role: 'rt', nama: `Ketua ${rtFormat}`, rt_id: rtFormat };
-            masukSistem();
+            errDiv.classList.add('hidden');
+            jalankanDashboard();
             return;
         }
     } 
     else if (databaseAkun[user] && pass === '123') {
         currentUser = databaseAkun[user];
-        masukSistem();
+        errDiv.classList.add('hidden');
+        jalankanDashboard();
         return;
     }
-    document.getElementById('loginError').classList.remove('hidden');
+
+    errDiv.classList.remove('hidden');
 }
 
-function masukSistem() {
-    document.getElementById('loginError').classList.add('hidden');
+function jalankanDashboard() {
     document.getElementById('loginPage').style.display = 'none';
     
     if (currentUser.role === 'rt') {
         document.getElementById('dashboardRT').classList.remove('hidden');
+        document.getElementById('dashboardOperator').classList.add('hidden');
         document.getElementById('rtNamaHeader').innerText = currentUser.nama;
         renderTabelRT();
     } else {
         document.getElementById('dashboardOperator').classList.remove('hidden');
+        document.getElementById('dashboardRT').classList.add('hidden');
         document.getElementById('opGreetingName').innerText = currentUser.nama;
         setupFilterRTDropdown();
         renderTabelOperator();
     }
-    feather.replace();
+    setTimeout(() => feather.replace(), 100);
 }
 
 window.prosesLogout = function() {
@@ -103,14 +110,12 @@ window.prosesLogout = function() {
 // =====================================
 // FUNGSI BANTU: AUTO-COMPRESS GAMBAR
 // =====================================
-function kompresGambar(file, maxWidth = 800, quality = 0.7) {
+function kompresGambar(file, maxWidth = 800, quality = 0.6) {
     return new Promise((resolve) => {
-        // Jika file berupa PDF, tidak perlu dikompres dengan canvas
         if (file.type === "application/pdf") {
             resolve(file);
             return;
         }
-
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = function(event) {
@@ -119,19 +124,15 @@ function kompresGambar(file, maxWidth = 800, quality = 0.7) {
             img.onload = function() {
                 let width = img.width;
                 let height = img.height;
-
                 if (width > maxWidth) {
                     height = Math.round((height * maxWidth) / width);
                     width = maxWidth;
                 }
-
                 const canvas = document.createElement('canvas');
                 canvas.width = width;
                 canvas.height = height;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
-
-                // Ubah ke format Base64 terkompresi
                 const dataUrl = canvas.toDataURL('image/jpeg', quality);
                 resolve(dataUrl);
             }
@@ -165,24 +166,19 @@ window.kirimFormulirRT = async function(e) {
 
     try {
         let fileBase64 = "";
-
         if (file.type === "application/pdf") {
-            // Cek ukuran PDF mentah
             if (file.size > 700000) {
                 throw new Error("Ukuran file PDF terlalu besar (Maksimal 500 KB).");
             }
-            // Ubah PDF ke Base64 langsung
             fileBase64 = await new Promise((resolve) => {
                 const reader = new FileReader();
                 reader.onload = (ev) => resolve(ev.target.result);
                 reader.readAsDataURL(file);
             });
         } else {
-            // Otomatis kompres gambar agar ukurannya dijamin aman di bawah 500 KB
             fileBase64 = await kompresGambar(file, 800, 0.6);
         }
 
-        // Kirim data ke Firebase Firestore
         await addDoc(collection(db, "data_pelayanan"), {
             rt_id: currentUser.rt_id,
             tanggal: `${tgl} ${jam}`,
@@ -203,7 +199,7 @@ window.kirimFormulirRT = async function(e) {
         document.getElementById('rtInputKeperluan').value = '';
         fileInput.value = '';
         
-        alert(`Sukses! Data & Berkas berhasil dikompres otomatis dan dikirim.\nNomor Tiket: ${tiket}`);
+        alert(`Sukses! Data & Berkas berhasil dikirim.\nNomor Tiket: ${tiket}`);
     } catch (error) {
         alert("Gagal memproses berkas: " + error.message);
     }
@@ -215,6 +211,7 @@ window.kirimFormulirRT = async function(e) {
 
 function renderTabelRT() {
     const tbody = document.getElementById('tabelDataRT');
+    if(!tbody) return;
     tbody.innerHTML = '';
     
     let dataMilikRT = dataPermohonan.filter(d => d.rt_id === currentUser.rt_id);
@@ -258,3 +255,127 @@ function renderTabelRT() {
 // LOGIKA OPERATOR
 // =====================================
 function setupFilterRTDropdown() {
+    const dropdown = document.getElementById('opFilterRT');
+    if(!dropdown) return;
+    dropdown.innerHTML = '<option value="Semua">Semua RT (1-19)</option>';
+    for (let i = 1; i <= 19; i++) {
+        let rtStr = i < 10 ? `RT 0${i}` : `RT ${i}`;
+        dropdown.innerHTML += `<option value="${rtStr}">${rtStr}</option>`;
+    }
+}
+
+window.filterOpStatus = function(status) {
+    currentStatusOp = status;
+    let judul = document.getElementById('judulTabelOp');
+    if(judul) judul.innerText = status === 'Semua' ? 'Semua Data Layanan' : `Data Layanan: ${status}`;
+    
+    document.querySelectorAll('.op-menu').forEach(el => {
+        el.classList.remove('bg-[#1e282c]', 'border-[#3c8dbc]', 'text-white');
+        el.classList.add('border-transparent', 'text-slate-400');
+    });
+    let activeMenu = document.getElementById('menu-' + status);
+    if(activeMenu) {
+        activeMenu.classList.remove('border-transparent', 'text-slate-400');
+        activeMenu.classList.add('bg-[#1e282c]', 'border-[#3c8dbc]', 'text-white');
+    }
+    renderTabelOperator();
+}
+
+window.renderTabelOperator = function() {
+    const filterRTEl = document.getElementById('opFilterRT');
+    const filterRT = filterRTEl ? filterRTEl.value : 'Semua'; 
+    let filteredData = dataPermohonan;
+
+    if (filterRT !== 'Semua') {
+        filteredData = filteredData.filter(d => d.rt_id === filterRT);
+    }
+
+    let masuk = 0, proses = 0, selesai = 0, batal = 0;
+    filteredData.forEach(d => {
+        if(d.status === 'Menunggu') masuk++;
+        if(d.status === 'Diproses') proses++;
+        if(d.status === 'Selesai') selesai++;
+        if(d.status === 'Dibatalkan') batal++;
+    });
+    
+    if(document.getElementById('countMasuk')) document.getElementById('countMasuk').innerText = masuk;
+    if(document.getElementById('countProses')) document.getElementById('countProses').innerText = proses;
+    if(document.getElementById('countSelesai')) document.getElementById('countSelesai').innerText = selesai;
+    if(document.getElementById('countBatal')) document.getElementById('countBatal').innerText = batal;
+
+    if (currentStatusOp !== 'Semua') {
+        filteredData = filteredData.filter(d => d.status === currentStatusOp);
+    }
+
+    const tbody = document.getElementById('tabelDataOperator');
+    if(!tbody) return;
+    tbody.innerHTML = '';
+
+    filteredData.forEach(data => {
+        let statusColor = "text-slate-600";
+        if(data.status === 'Menunggu') statusColor = "text-[#00c0ef] font-bold";
+        if(data.status === 'Diproses') statusColor = "text-[#f39c12] font-bold";
+        if(data.status === 'Selesai') statusColor = "text-[#00a65a] font-bold";
+        if(data.status === 'Dibatalkan') statusColor = "text-[#dd4b39] font-bold";
+
+        let tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50 text-slate-700";
+        tr.innerHTML = `
+            <td class="py-3 pr-2 align-top"><span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded font-bold">${data.rt_id}</span></td>
+            <td class="py-3 pr-2 align-top text-xs">${data.tanggal.split(' ')[0]}<br><span class="font-mono font-bold">${data.tiket}</span></td>
+            <td class="py-3 pr-2 align-top text-xs"><span class="font-bold text-sm">${data.nama}</span><br>${data.wa}</td>
+            <td class="py-3 pr-2 align-top text-xs">
+                <span class="font-bold">${data.layanan}</span><br>
+                <span class="text-slate-500">${data.keperluan}</span>
+                <div class="mt-2">
+                    <button onclick="lihatBerkas('${data.id}')" class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline font-medium">
+                        <i data-feather="external-link" class="w-3 h-3"></i> Cek Berkas Lampiran
+                    </button>
+                </div>
+            </td>
+            <td class="py-3 pr-2 align-top ${statusColor} text-xs">${data.status}</td>
+            <td class="py-3 align-top text-center">
+                <select onchange="ubahStatusDariOperator('${data.id}', this.value)" class="text-xs border border-slate-300 rounded p-1 focus:outline-none cursor-pointer">
+                    <option value="Menunggu" ${data.status === 'Menunggu' ? 'selected' : ''}>Menunggu</option>
+                    <option value="Diproses" ${data.status === 'Diproses' ? 'selected' : ''}>Diproses</option>
+                    <option value="Selesai" ${data.status === 'Selesai' ? 'selected' : ''}>Selesai</option>
+                    <option value="Dibatalkan" ${data.status === 'Dibatalkan' ? 'selected' : ''}>Dibatalkan</option>
+                </select>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    if(filteredData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-500 text-sm italic">Tidak ada data ditemukan.</td></tr>`;
+    }
+    feather.replace();
+}
+
+window.lihatBerkas = function(id) {
+    const data = dataPermohonan.find(d => d.id === id);
+    if(data && data.fileData) {
+        let newWindow = window.open();
+        if(!newWindow) {
+            alert("Browser Anda memblokir Pop-up! Izinkan pop-up untuk melihat berkas.");
+            return;
+        }
+        if (data.fileData.startsWith("data:image")) {
+            newWindow.document.write(`<body style="margin:0; background:#222; display:flex; justify-content:center; align-items:center; height:100vh;"><img src="${data.fileData}" style="max-width:100%; max-height:100vh; object-fit:contain;" /></body>`);
+        } else {
+            newWindow.document.write(`<body style="margin:0;"><iframe src="${data.fileData}" frameborder="0" style="border:0; width:100vw; height:100vh;" allowfullscreen></iframe></body>`);
+        }
+    } else {
+        alert("Berkas tidak ditemukan.");
+    }
+}
+
+window.ubahStatusDariOperator = async function(id, newStatus) {
+    try {
+        await updateDoc(doc(db, "data_pelayanan", id), {
+            status: newStatus
+        });
+    } catch (error) {
+        alert("Gagal memperbarui status: " + error.message);
+    }
+}
