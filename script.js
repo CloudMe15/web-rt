@@ -1,305 +1,235 @@
 feather.replace();
 
 // =====================================
-// 1. DATABASE & STATE SIMULASI
+// 1. DATABASE & STATE (MENDUKUNG 19 RT)
 // =====================================
 const databaseAkun = {
-    'warga': { role: 'warga', nama: 'Warga Masyarakat' },
-    'rt': { role: 'rt', nama: 'Bapak Ketua RT' },
-    'operator': { role: 'operator', nama: 'Operator Desa' }
+    'operator': { role: 'operator', nama: 'Operator Desa' },
+    'super': { role: 'super', nama: 'Super Admin' }
 };
 
-// Data Dummy (Simulasi format Google Sheets)
+// Data Awal Simulasi (Setiap data memiliki ID RT pengirimnya)
 let dataPermohonan = [
-    {
-        id: 1,
-        timestamp: '2026-10-05 09:00',
-        nik: '1234567890123456',
-        nama: 'Ahmad Yani',
-        wa: '081234567890',
-        rt: 'RT 01',
-        layanan: 'Surat Pengantar SKCK',
-        keperluan: 'Melamar kerja',
-        catatanRT: '',
-        file: 'ktp_kk.jpg',
-        status: 'Menunggu', // Menunggu, Diproses, Selesai
-        catatanKendala: ''
-    },
-    {
-        id: 2,
-        timestamp: '2026-10-04 14:30',
-        nik: '9876543210987654',
-        nama: 'Siti Aminah',
-        wa: '089876543210',
-        rt: 'RT 02',
-        layanan: 'Surat Keterangan Usaha',
-        keperluan: 'Pinjaman bank',
-        catatanRT: 'Valid: Usaha warung sembako aktif di lingkungan.',
-        file: 'berkas_siti.pdf',
-        status: 'Diproses',
-        catatanKendala: 'Menunggu tanda tangan Kades'
-    }
+    { id: 1, rt_id: 'RT 01', tanggal: '2026-10-05 09:55:59', tiket: 'ZG8938', nama: 'Bujang', wa: '082212345678', layanan: 'Surat Pengantar SKCK', keperluan: 'Melamar kerja', status: 'Menunggu' },
+    { id: 2, rt_id: 'RT 02', tanggal: '2026-10-04 12:55:43', tiket: 'QK7474', nama: 'Ali Borkat', wa: '081387613351', layanan: 'Surat Keterangan Usaha', keperluan: 'Usaha warung sembako.', status: 'Diproses' },
+    { id: 3, rt_id: 'RT 01', tanggal: '2026-10-02 10:22:15', tiket: 'OB8024', nama: 'Sumarno', wa: '082247179340', layanan: 'Surat Keterangan Domisili', keperluan: 'Pindah alamat.', status: 'Selesai' },
+    { id: 4, rt_id: 'RT 15', tanggal: '2026-10-01 14:44:39', tiket: 'DK7782', nama: 'Rendra', wa: '085364685445', layanan: 'Keterangan Kelahiran', keperluan: 'Anak pertama lahir.', status: 'Menunggu' }
 ];
 
 let currentUser = null; 
+let currentStatusOp = 'Semua';
 
 // =====================================
-// 2. SISTEM LOGIN
+// 2. SISTEM LOGIN DINAMIS (BACA RT 1 - 19)
 // =====================================
 function prosesLogin(e) {
     e.preventDefault();
-    const user = document.getElementById('loginUsername').value;
-    const pass = document.getElementById('loginPassword').value;
+    let user = document.getElementById('loginUsername').value.toLowerCase().trim();
+    let pass = document.getElementById('loginPassword').value;
 
-    // Login statis simulasi (password bebas asalkan '123')
-    if (databaseAkun[user] && pass === '123') {
+    // Cek apakah yang login adalah RT (rt1, rt2 ... rt19)
+    if (user.startsWith('rt') && pass === '123') {
+        let nomorRT = parseInt(user.replace('rt', ''));
+        if (nomorRT >= 1 && nomorRT <= 19) {
+            // Format angka jadi 2 digit (RT 01, RT 02, dst)
+            let rtFormat = nomorRT < 10 ? `RT 0${nomorRT}` : `RT ${nomorRT}`;
+            currentUser = { role: 'rt', nama: `Ketua ${rtFormat}`, rt_id: rtFormat };
+            masukSistem();
+            return;
+        }
+    } 
+    // Cek jika operator/super admin
+    else if (databaseAkun[user] && pass === '123') {
         currentUser = databaseAkun[user];
-        document.getElementById('loginError').classList.add('hidden');
-        document.getElementById('loginPage').style.display = 'none';
-        document.getElementById('dashboardPage').style.display = 'block';
-        
-        setupDashboard(); 
-    } else {
-        document.getElementById('loginError').classList.remove('hidden');
+        masukSistem();
+        return;
     }
+
+    document.getElementById('loginError').classList.remove('hidden');
+}
+
+function masukSistem() {
+    document.getElementById('loginError').classList.add('hidden');
+    document.getElementById('loginPage').style.display = 'none';
+    
+    // Tampilkan Dashboard yang sesuai dengan Role (Sangat Berbeda)
+    if (currentUser.role === 'rt') {
+        document.getElementById('dashboardRT').classList.remove('hidden');
+        document.getElementById('rtNamaHeader').innerText = currentUser.nama;
+        renderTabelRT(); // Hanya me-render data miliknya
+    } else {
+        document.getElementById('dashboardOperator').classList.remove('hidden');
+        document.getElementById('opGreetingName').innerText = currentUser.nama;
+        setupFilterRTDropdown();
+        renderTabelOperator(); // Render semua data dengan filter
+    }
+    feather.replace();
 }
 
 function prosesLogout() {
     currentUser = null;
-    document.getElementById('dashboardPage').style.display = 'none';
+    document.getElementById('dashboardRT').classList.add('hidden');
+    document.getElementById('dashboardOperator').classList.add('hidden');
     document.getElementById('loginPage').style.display = 'flex';
+    document.getElementById('loginUsername').value = '';
+    document.getElementById('loginPassword').value = '';
 }
 
 // =====================================
-// 3. PENGATURAN DASHBOARD & MENU
+// 3. LOGIKA KHUSUS DASHBOARD RT
 // =====================================
-function setupDashboard() {
-    document.getElementById('userGreeting').innerText = currentUser.nama;
-    
-    const roleIcon = document.getElementById('roleIcon');
-    const roleTitle = document.getElementById('roleTitle');
-    const menuContainer = document.getElementById('menuContainer');
-    
-    menuContainer.innerHTML = ''; 
-
-    if (currentUser.role === 'warga' || currentUser.role === 'rt') {
-        roleIcon.setAttribute('data-feather', currentUser.role === 'rt' ? 'award' : 'user');
-        roleTitle.innerText = currentUser.role === 'rt' ? 'Ketua RT (Garda Depan)' : 'Warga Pemohon';
-        
-        // Form tambahan khusus RT
-        const panelRT = document.getElementById('panelCatatanRT');
-        if(currentUser.role === 'rt') {
-            panelRT.classList.remove('hidden');
-        } else {
-            panelRT.classList.add('hidden');
-        }
-
-        buatTombolMenu('formulir', 'Formulir Layanan', 'edit-3');
-        buatTombolMenu('status-warga', 'Cek Status', 'clock');
-        bukaModul('formulir');
-    } 
-    else if (currentUser.role === 'operator') {
-        roleIcon.setAttribute('data-feather', 'laptop');
-        roleTitle.innerText = 'Operator Desa';
-
-        buatTombolMenu('monitoring', 'Dashboard Google Sheets', 'sidebar');
-        bukaModul('monitoring');
-    }
-
-    feather.replace(); 
-    renderTabelData(); 
-}
-
-function buatTombolMenu(idModul, teks, ikon) {
-    const btn = document.createElement('button');
-    btn.onclick = () => bukaModul(idModul);
-    btn.className = "modul-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition bg-white text-slate-600 border border-slate-200 hover:bg-slate-100";
-    btn.id = 'btn-modul-' + idModul;
-    btn.innerHTML = `<i data-feather="${ikon}" class="w-4 h-4"></i> ${teks}`;
-    document.getElementById('menuContainer').appendChild(btn);
-}
-
-function bukaModul(idModul) {
-    const semuaModul = ['formulir', 'monitoring', 'status-warga'];
-    
-    semuaModul.forEach(m => {
-        let el = document.getElementById('modul-' + m);
-        let btn = document.getElementById('btn-modul-' + m);
-        if(el) el.classList.add('hidden');
-        if(btn) btn.className = "modul-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition bg-white text-slate-600 border border-slate-200 hover:bg-slate-100";
-    });
-
-    let activeEl = document.getElementById('modul-' + idModul);
-    let activeBtn = document.getElementById('btn-modul-' + idModul);
-    
-    if(activeEl) activeEl.classList.remove('hidden');
-    if(activeBtn) activeBtn.className = "modul-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition bg-emerald-600 text-white shadow";
-}
-
-// =====================================
-// 4. LOGIKA PENGISIAN FORM (Warga / RT)
-// =====================================
-function kirimFormulir(e) {
+function kirimFormulirRT(e) {
     e.preventDefault();
-    
     const d = new Date();
-    const timestampStr = d.toISOString().split('T')[0] + ' ' + d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
-
-    let catatanTambahan = '';
-    if(currentUser.role === 'rt') {
-        catatanTambahan = document.getElementById('inputCatatanRT').value;
-    }
+    const tgl = d.toISOString().split('T')[0];
+    const jam = d.toTimeString().split(' ')[0];
+    const tiket = 'TK' + Math.floor(Math.random() * 9000 + 1000);
 
     dataPermohonan.push({
         id: Date.now(),
-        timestamp: timestampStr,
-        nik: document.getElementById('inputNIK').value,
-        nama: document.getElementById('inputNama').value,
-        wa: document.getElementById('inputWA').value,
-        rt: document.getElementById('inputRT').value,
-        layanan: document.getElementById('inputLayanan').value,
-        keperluan: document.getElementById('inputKeperluan').value,
-        catatanRT: catatanTambahan,
-        file: document.getElementById('inputBerkas').files[0].name,
-        status: 'Menunggu',
-        catatanKendala: ''
+        rt_id: currentUser.rt_id, // Kunci: Label data dengan ID RT pembuatnya
+        tanggal: `${tgl} ${jam}`,
+        tiket: tiket,
+        nama: document.getElementById('rtInputNama').value,
+        wa: document.getElementById('rtInputWA').value,
+        layanan: document.getElementById('rtInputLayanan').value,
+        keperluan: document.getElementById('rtInputKeperluan').value,
+        status: 'Menunggu'
     });
 
-    e.target.reset(); // Kosongkan form
-    alert("Formulir berhasil dikirim ke Operator Desa!");
-    bukaModul('status-warga'); 
-    renderTabelData();
+    e.target.reset();
+    alert(`Sukses! Laporan Anda telah dikirim ke Operator Desa.\nNomor Tiket: ${tiket}`);
+    renderTabelRT();
 }
 
-// =====================================
-// 5. RENDER TABEL (Operator & Warga)
-// =====================================
-function getStatusWarna(status) {
-    if (status === 'Menunggu') return 'bg-red-500 text-white'; // Merah
-    if (status === 'Diproses') return 'bg-yellow-400 text-slate-800'; // Kuning
-    if (status === 'Selesai') return 'bg-green-500 text-white'; // Hijau
-    return '';
-}
-
-function renderTabelData() {
-    // Render Tabel Warga/RT
-    const tbodyWarga = document.getElementById('tabelStatusWarga');
-    if(tbodyWarga) tbodyWarga.innerHTML = '';
-
-    // Render Tabel Operator (Gaya Google Sheets)
-    const tbodyOp = document.getElementById('tabelOperator');
-    if(tbodyOp) tbodyOp.innerHTML = '';
-
-    // Sort: terbaru di atas
-    let sortedData = [...dataPermohonan].reverse();
-
-    sortedData.forEach(data => {
-        // --- 1. BARIS UNTUK TABEL WARGA/RT ---
-        if (currentUser.role === 'warga' || currentUser.role === 'rt') {
-            let trWarga = document.createElement('tr');
-            trWarga.className = "hover:bg-slate-50";
-            trWarga.innerHTML = `
-                <td class="py-3 px-3 text-xs text-slate-500">${data.timestamp}</td>
-                <td class="py-3 px-3 font-semibold text-slate-700">${data.nama}</td>
-                <td class="py-3 px-3 text-sm">${data.layanan}</td>
-                <td class="py-3 px-3">
-                    <span class="px-2 py-1 rounded text-xs font-bold ${getStatusWarna(data.status)}">${data.status}</span>
-                </td>
-                <td class="py-3 px-3 text-xs text-rose-600 font-medium">${data.catatanKendala || '-'}</td>
-            `;
-            if(tbodyWarga) tbodyWarga.appendChild(trWarga);
-        }
-        
-        // --- 2. BARIS UNTUK TABEL OPERATOR ---
-        if (currentUser.role === 'operator') {
-            let trOp = document.createElement('tr');
-            // Warna baris diwarnai tipis sesuai status
-            let rowColor = data.status === 'Menunggu' ? 'bg-red-50' : data.status === 'Diproses' ? 'bg-yellow-50' : 'bg-green-50';
-            trOp.className = `${rowColor} border-b border-slate-200`;
-
-            trOp.innerHTML = `
-                <td class="py-2 px-3 border-r border-slate-200 text-xs text-slate-500 whitespace-nowrap">${data.timestamp}</td>
-                <td class="py-2 px-3 border-r border-slate-200 font-semibold text-slate-700">
-                    ${data.nama} <br> <span class="text-xs text-slate-400 font-normal">NIK: ${data.nik}</span>
-                </td>
-                <td class="py-2 px-3 border-r border-slate-200 text-xs">${data.wa}</td>
-                <td class="py-2 px-3 border-r border-slate-200 text-xs">${data.rt}</td>
-                <td class="py-2 px-3 border-r border-slate-200 text-xs">
-                    ${data.layanan} <br>
-                    <a href="#" class="text-blue-600 hover:underline">Lihat Berkas (${data.file})</a>
-                    ${data.catatanRT ? `<br><span class="text-rose-600 italic">Catatan RT: ${data.catatanRT}</span>` : ''}
-                </td>
-                <td class="py-2 px-3 border-r border-slate-200 text-center">
-                    <span class="px-2 py-1 rounded text-xs font-bold shadow-sm ${getStatusWarna(data.status)} cursor-pointer" onclick="ubahStatus(${data.id})">
-                        ${data.status} &#9662;
-                    </span>
-                </td>
-                <td class="py-2 px-3 border-r border-slate-200 text-xs font-medium text-rose-700 cursor-pointer" onclick="tambahKendala(${data.id})">
-                    ${data.catatanKendala || '<span class="text-slate-400 italic">Klik tambah kendala...</span>'}
-                </td>
-                <td class="py-2 px-3 text-center">
-                    <button onclick="kirimWA(${data.id})" class="inline-flex items-center gap-1 px-2 py-1.5 bg-green-100 text-green-700 border border-green-300 rounded text-xs font-bold hover:bg-green-200 transition">
-                        <i data-feather="message-circle" class="w-3 h-3"></i> Kirim WA
-                    </button>
-                </td>
-            `;
-            if(tbodyOp) tbodyOp.appendChild(trOp);
-        }
-    });
-
-    feather.replace();
-}
-
-// =====================================
-// 6. FUNGSI OPERATOR DESA
-// =====================================
-function ubahStatus(id) {
-    const index = dataPermohonan.findIndex(d => d.id === id);
-    if (index !== -1) {
-        let current = dataPermohonan[index].status;
-        // Siklus perubahan status: Menunggu -> Diproses -> Selesai -> Menunggu
-        if (current === 'Menunggu') dataPermohonan[index].status = 'Diproses';
-        else if (current === 'Diproses') dataPermohonan[index].status = 'Selesai';
-        else dataPermohonan[index].status = 'Menunggu';
-        renderTabelData();
-    }
-}
-
-function tambahKendala(id) {
-    const index = dataPermohonan.findIndex(d => d.id === id);
-    if (index !== -1) {
-        let kendala = prompt("Masukkan Catatan Kendala (misal: Foto KK buram):", dataPermohonan[index].catatanKendala);
-        if (kendala !== null) {
-            dataPermohonan[index].catatanKendala = kendala;
-            renderTabelData();
-        }
-    }
-}
-
-function kirimWA(id) {
-    const data = dataPermohonan.find(d => d.id === id);
-    if (!data) return;
-
-    let pesan = "";
+function renderTabelRT() {
+    const tbody = document.getElementById('tabelDataRT');
+    tbody.innerHTML = '';
     
-    // Format sesuai blueprint "Templat Pesan Notifikasi WhatsApp Operator"
-    if (data.status === 'Selesai') {
-        pesan = `Assalamu'alaikum Wr. Wb. / Selamat Siang,\nYth. Bapak/Ibu *${data.nama}*,\n\nPermohonan pengurusan *${data.layanan}* Anda di Kantor Desa Lubuk Sitarak telah SELESAI diproses.\n\nSilakan datang ke Kantor Desa Lubuk Sitarak pada jam kerja (Senin-Jumat, 08.00-15.00 WIB) untuk pengambilan berkas fisik dengan membawa identitas diri (KTP asli).\n\nTerima kasih.`;
-    } 
-    else if (data.catatanKendala !== '') {
-        pesan = `Assalamu'alaikum Wr. Wb. / Selamat Siang,\nYth. Bapak/Ibu *${data.nama}*,\n\nSehubungan dengan permohonan *${data.layanan}* Anda, terdapat berkas yang perlu diperbaiki/dilengkapi:\nKendala: *${data.catatanKendala}*\n\nMohon kirimkan ulang berkas tersebut melalui balasan WhatsApp ini agar dokumen dapat segera kami proses.\n\nTerima kasih.`;
-    } 
-    else {
-        alert("Pilih status 'Selesai' atau tambahkan 'Catatan Kendala' terlebih dahulu sebelum mengirim WA konfirmasi.");
-        return;
+    // FILTER: Hanya ambil data permohonan yang ID RT-nya sama dengan yang sedang login!
+    let dataMilikRT = dataPermohonan.filter(d => d.rt_id === currentUser.rt_id).reverse();
+
+    dataMilikRT.forEach(data => {
+        let statusStyle = data.status === 'Selesai' ? 'text-green-600' : (data.status === 'Dibatalkan' ? 'text-red-600' : 'text-orange-500');
+        
+        let tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="py-3 px-3 text-xs font-mono">${data.tiket}</td>
+            <td class="py-3 px-3 font-semibold text-slate-700">${data.nama}</td>
+            <td class="py-3 px-3 text-xs">${data.layanan}</td>
+            <td class="py-3 px-3 font-bold ${statusStyle}">${data.status}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    if(dataMilikRT.length === 0) tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-slate-500 italic">Belum ada laporan dari lingkungan Anda.</td></tr>`;
+}
+
+// =====================================
+// 4. LOGIKA KHUSUS DASHBOARD OPERATOR
+// =====================================
+function setupFilterRTDropdown() {
+    const dropdown = document.getElementById('opFilterRT');
+    dropdown.innerHTML = '<option value="Semua">Semua RT (1-19)</option>';
+    // Buat opsi RT 01 sampai RT 19
+    for (let i = 1; i <= 19; i++) {
+        let rtStr = i < 10 ? `RT 0${i}` : `RT ${i}`;
+        dropdown.innerHTML += `<option value="${rtStr}">${rtStr}</option>`;
+    }
+}
+
+function filterOpStatus(status) {
+    currentStatusOp = status;
+    
+    // Ubah Judul Tabel
+    document.getElementById('judulTabelOp').innerText = status === 'Semua' ? 'Semua Data Layanan' : `Data Layanan: ${status}`;
+
+    // Styling Menu Aktif Sidebar Operator
+    document.querySelectorAll('.op-menu').forEach(el => {
+        el.classList.remove('bg-[#1e282c]', 'border-[#3c8dbc]', 'text-white');
+        el.classList.add('border-transparent', 'text-slate-400');
+    });
+    let activeMenu = document.getElementById('menu-' + status);
+    if(activeMenu) {
+        activeMenu.classList.remove('border-transparent', 'text-slate-400');
+        activeMenu.classList.add('bg-[#1e282c]', 'border-[#3c8dbc]', 'text-white');
     }
 
-    // Format nomor HP ke format internasional (ubah 08 menjadi 628)
-    let noWA = data.wa;
-    if(noWA.startsWith('0')) {
-        noWA = '62' + noWA.substring(1);
+    renderTabelOperator();
+}
+
+function renderTabelOperator() {
+    // 1. Ambil nilai filter
+    const filterRT = document.getElementById('opFilterRT').value; // 'Semua' atau 'RT 01', dll.
+    
+    // 2. Lakukan penyaringan bertingkat (Filter RT -> Filter Status)
+    let filteredData = dataPermohonan;
+
+    // Filter berdasarkan RT (Jika Operator memilih RT tertentu)
+    if (filterRT !== 'Semua') {
+        filteredData = filteredData.filter(d => d.rt_id === filterRT);
     }
 
-    const urlWA = `https://wa.me/${noWA}?text=${encodeURIComponent(pesan)}`;
-    window.open(urlWA, '_blank');
+    // Update Angka Kartu (Berdasarkan RT yang dipilih!)
+    let masuk = 0, proses = 0, selesai = 0, batal = 0;
+    filteredData.forEach(d => {
+        if(d.status === 'Menunggu') masuk++;
+        if(d.status === 'Diproses') proses++;
+        if(d.status === 'Selesai') selesai++;
+        if(d.status === 'Dibatalkan') batal++;
+    });
+    document.getElementById('countMasuk').innerText = masuk;
+    document.getElementById('countProses').innerText = proses;
+    document.getElementById('countSelesai').innerText = selesai;
+    document.getElementById('countBatal').innerText = batal;
+
+    // Filter berdasarkan Status Menu Sidebar
+    if (currentStatusOp !== 'Semua') {
+        filteredData = filteredData.filter(d => d.status === currentStatusOp);
+    }
+    
+    filteredData.sort((a,b) => b.id - a.id); // Teratas yang terbaru
+
+    // 3. Render Baris HTML
+    const tbody = document.getElementById('tabelDataOperator');
+    tbody.innerHTML = '';
+
+    filteredData.forEach(data => {
+        let statusColor = "text-slate-600";
+        if(data.status === 'Menunggu') statusColor = "text-[#00c0ef] font-bold";
+        if(data.status === 'Diproses') statusColor = "text-[#f39c12] font-bold";
+        if(data.status === 'Selesai') statusColor = "text-[#00a65a] font-bold";
+        if(data.status === 'Dibatalkan') statusColor = "text-[#dd4b39] font-bold";
+
+        let tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50 text-slate-700";
+        tr.innerHTML = `
+            <td class="py-3 pr-2 align-top"><span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded font-bold">${data.rt_id}</span></td>
+            <td class="py-3 pr-2 align-top text-xs">${data.tanggal.split(' ')[0]}<br><span class="font-mono font-bold">${data.tiket}</span></td>
+            <td class="py-3 pr-2 align-top text-xs"><span class="font-bold text-sm">${data.nama}</span><br>${data.wa}</td>
+            <td class="py-3 pr-2 align-top text-xs"><span class="font-bold">${data.layanan}</span><br><span class="text-slate-500">${data.keperluan}</span></td>
+            <td class="py-3 pr-2 align-top ${statusColor} text-xs">${data.status}</td>
+            <td class="py-3 align-top text-center">
+                <select onchange="ubahStatusDariOperator(${data.id}, this.value)" class="text-xs border border-slate-300 rounded p-1 focus:outline-none cursor-pointer">
+                    <option value="Menunggu" ${data.status === 'Menunggu' ? 'selected' : ''}>Menunggu</option>
+                    <option value="Diproses" ${data.status === 'Diproses' ? 'selected' : ''}>Diproses</option>
+                    <option value="Selesai" ${data.status === 'Selesai' ? 'selected' : ''}>Selesai</option>
+                    <option value="Dibatalkan" ${data.status === 'Dibatalkan' ? 'selected' : ''}>Dibatalkan</option>
+                </select>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    if(filteredData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-500 text-sm italic">Tidak ada data ditemukan.</td></tr>`;
+    }
+}
+
+function ubahStatusDariOperator(id, newStatus) {
+    const index = dataPermohonan.findIndex(d => d.id === id);
+    if (index !== -1) {
+        dataPermohonan[index].status = newStatus;
+        renderTabelOperator(); 
+    }
 }
