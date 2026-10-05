@@ -3,122 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Informasi RT</title>
+    <title>Portal Sistem Terpadu</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/feather-icons"></script>
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans">
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen">
 
-    <!-- Header / Navbar -->
-    <header class="bg-emerald-700 text-white shadow-md sticky top-0 z-50">
-        <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
-            <div class="flex items-center space-x-2">
-                <i data-feather="shield"></i>
-                <h1 class="text-xl font-bold tracking-tight">Portal Digital RT 04</h1>
+    <!-- ================= HALAMAN LOGIN ================= -->
+    <div id="loginPage" class="flex items-center justify-center min-h-screen bg-slate-800">
+        <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
+            <div class="text-center mb-6">
+                <i data-feather="lock" class="w-12 h-12 text-emerald-600 mx-auto mb-2"></i>
+                <h2 class="text-2xl font-bold text-slate-800">Portal Login</h2>
+                <p class="text-sm text-slate-500">Silakan masuk menggunakan akun Anda</p>
             </div>
             
-            <!-- Role Switcher (Ditambah Super Admin) -->
-            <div class="flex items-center bg-emerald-800 rounded-lg p-1 border border-emerald-600 overflow-x-auto">
-                <span class="text-xs px-2 font-medium text-emerald-200">Peran:</span>
-                <button id="btnRoleWarga" onclick="setRole('warga')" class="px-3 py-1 text-sm font-semibold rounded-md transition bg-white text-emerald-800 shadow">Warga</button>
-                <button id="btnRoleRT" onclick="setRole('rt')" class="px-3 py-1 text-sm font-semibold rounded-md transition text-white hover:bg-emerald-700">Ketua RT</button>
-                <button id="btnRoleSuper" onclick="setRole('superadmin')" class="px-3 py-1 text-sm font-semibold rounded-md transition text-white hover:bg-emerald-700">Super Admin</button>
+            <form onsubmit="prosesLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-600 mb-1">Username</label>
+                    <input type="text" id="loginUsername" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:border-emerald-600">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-600 mb-1">Password</label>
+                    <input type="password" id="loginPassword" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:border-emerald-600">
+                </div>
+                <div id="loginError" class="hidden text-rose-600 text-sm font-semibold text-center bg-rose-50 p-2 rounded">
+                    Username atau Password salah!
+                </div>
+                <button type="submit" class="w-full bg-emerald-600 text-white font-bold py-2 rounded-lg hover:bg-emerald-700 transition">Masuk</button>
+            </form>
+            
+            <div class="mt-6 p-4 bg-slate-50 rounded-lg text-xs text-slate-600">
+                <strong>Akun Uji Coba:</strong><br>
+                1. RT &rarr; User: <b>rt</b> | Pass: <b>123</b><br>
+                2. Admin &rarr; User: <b>admin</b> | Pass: <b>123</b><br>
+                3. Super Admin &rarr; User: <b>super</b> | Pass: <b>123</b>
             </div>
         </div>
-    </header>
+    </div>
 
-    <div class="max-w-6xl mx-auto px-4 py-6 grid grid-cols-1 md:grid-cols-4 gap-6">
-        
-        <!-- Sidebar Menu -->
-        <nav id="sidebarMenu" class="md:col-span-1 space-y-1">
-            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-4">
-                <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">Status Aktif</p>
-                <p id="roleDisplay" class="text-base font-bold text-slate-700 capitalize flex items-center gap-2 mt-1">
-                    <i data-feather="user-check" class="text-emerald-600"></i> Warga Lingkungan
-                </p>
+
+    <!-- ================= HALAMAN DASHBOARD ================= -->
+    <div id="dashboardPage" class="hidden">
+        <!-- Header -->
+        <header class="bg-emerald-700 text-white shadow-md sticky top-0 z-50">
+            <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <i data-feather="shield"></i>
+                    <h1 class="text-xl font-bold">Portal Terpadu</h1>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span id="userGreeting" class="text-sm font-medium">Halo, User</span>
+                    <button onclick="prosesLogout()" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 rounded-lg text-xs font-bold transition flex items-center gap-1">
+                        <i data-feather="log-out" class="w-4 h-4"></i> Keluar
+                    </button>
+                </div>
             </div>
+        </header>
 
-            <button onclick="setTab('administrasi')" id="tab-administrasi" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition bg-emerald-600 text-white shadow">
-                <i data-feather="file-text"></i> Administrasi
-            </button>
-            <button onclick="setTab('kependudukan')" id="tab-kependudukan" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition bg-white text-slate-600 border border-slate-200 hover:bg-slate-100">
-                <i data-feather="users"></i> Kependudukan
-            </button>
-            <button onclick="setTab('superadmin')" id="tab-superadmin" class="hidden w-full items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition bg-slate-800 text-white shadow">
-                <i data-feather="settings"></i> Sistem / Modul
-            </button>
-        </nav>
-
-        <!-- Main Content -->
-        <main id="mainContent" class="md:col-span-3">
+        <div class="max-w-6xl mx-auto px-4 py-6 grid grid-cols-1 md:grid-cols-4 gap-6">
             
-            <!-- MODUL 1: ADMINISTRASI -->
-            <div id="content-administrasi" class="space-y-6 block animasi-muncul">
-                <!-- Form Pengajuan Warga (Ditambah fitur upload dokumen) -->
-                <div id="formPengajuanWarga" class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                    <h3 class="text-lg font-bold mb-4 flex items-center gap-2"><i data-feather="plus" class="text-emerald-600"></i> Ajukan Surat Baru</h3>
-                    <form onsubmit="ajukanSurat(event)" class="space-y-4">
-                        <input type="text" id="inputNamaSurat" required placeholder="Nama Pemohon" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-600">
-                        <select id="inputJenisSurat" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-600">
-                            <option>Pengantar KTP</option>
-                            <option>Pengantar KK</option>
-                            <option>Surat Domisili</option>
-                        </select>
-                        <div>
-                            <label class="block text-xs text-slate-500 mb-1 font-semibold">Upload Berkas Pendukung (KTP/KK Lama)</label>
-                            <input type="file" id="inputDokumen" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
-                        </div>
-                        <button type="submit" class="bg-emerald-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-emerald-700 transition">Kirim Permohonan & Dokumen</button>
-                    </form>
+            <!-- Sidebar -->
+            <nav id="sidebarMenu" class="md:col-span-1 space-y-2">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-4 text-center">
+                    <div class="inline-block p-3 bg-emerald-100 text-emerald-700 rounded-full mb-2">
+                        <i id="roleIcon" data-feather="user"></i>
+                    </div>
+                    <p id="roleTitle" class="font-bold text-slate-800 text-lg">Peran</p>
                 </div>
 
-                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                    <h3 class="text-lg font-bold mb-4">Daftar Permohonan Surat</h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm">
-                            <thead class="bg-slate-50 text-slate-500 border-b">
-                                <tr>
-                                    <th class="py-2 px-3">Nama</th>
-                                    <th class="py-2 px-3">Jenis Surat</th>
-                                    <th class="py-2 px-3">Lampiran</th>
-                                    <th class="py-2 px-3">Status</th>
-                                    <th class="py-2 px-3 text-center aksi-rt hidden">Aksi RT / Admin</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabelSurat" class="divide-y divide-slate-100">
-                                <!-- Data digenerate oleh JavaScript -->
-                            </tbody>
-                        </table>
+                <!-- Menu akan di-generate oleh JavaScript sesuai Role -->
+                <div id="menuContainer" class="space-y-1"></div>
+            </nav>
+
+            <!-- Main Content -->
+            <main id="mainContent" class="md:col-span-3">
+                
+                <!-- MODUL: UPLOAD DATA RT -->
+                <div id="modul-upload" class="hidden space-y-6 animasi-muncul">
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <h3 class="text-lg font-bold mb-4 flex items-center gap-2"><i data-feather="upload-cloud" class="text-emerald-600"></i> Form Upload Data RT</h3>
+                        <form onsubmit="uploadDataRT(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-600 mb-1">Nama / Judul Laporan</label>
+                                <input type="text" id="inputJudul" required placeholder="Contoh: Laporan Dana Kas Bulan Oktober" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-emerald-600">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-600 mb-1">Lampirkan Foto / Bukti Dokumen</label>
+                                <input type="file" id="inputFoto" required accept="image/*,.pdf" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-emerald-100 file:text-emerald-700 hover:file:bg-emerald-200">
+                            </div>
+                            <button type="submit" class="bg-emerald-600 text-white font-bold text-sm px-4 py-2 rounded-lg hover:bg-emerald-700">Kirim Data ke Admin</button>
+                        </form>
                     </div>
                 </div>
-            </div>
 
-            <!-- MODUL KEPENDUDUKAN -->
-            <div id="content-kependudukan" class="hidden space-y-6 animasi-muncul">
-                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                    <h3 class="text-lg font-bold mb-4">Data Penduduk Aktif</h3>
-                    <p class="text-sm text-slate-500">Modul kependudukan standar...</p>
-                </div>
-            </div>
-
-            <!-- MODUL SUPER ADMIN (KHUSUS TAMBAH FITUR) -->
-            <div id="content-superadmin" class="hidden space-y-6 animasi-muncul">
-                <div class="bg-slate-800 text-white p-6 rounded-xl shadow-sm border border-slate-700">
-                    <h3 class="text-lg font-bold mb-4 flex items-center gap-2"><i data-feather="terminal" class="text-emerald-400"></i> Kontrol Super Admin</h3>
-                    <p class="text-sm text-slate-300 mb-6">Tambahkan modul atau menu baru ke dalam sistem RT secara dinamis.</p>
-                    
-                    <form onsubmit="tambahModulBaru(event)" class="space-y-4 bg-slate-900 p-4 rounded-lg">
-                        <div>
-                            <label class="block text-xs text-slate-400 mb-1">Nama Modul Baru</label>
-                            <input type="text" id="inputNamaModul" required placeholder="Contoh: Keuangan RT" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-400">
+                <!-- MODUL: VERIFIKASI (ADMIN & SUPER ADMIN) -->
+                <div id="modul-verifikasi" class="hidden space-y-6 animasi-muncul">
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <h3 class="text-lg font-bold mb-4">Daftar Data Masuk (Dari RT)</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-slate-50 text-slate-500 border-b">
+                                    <tr>
+                                        <th class="py-2 px-3">Tanggal</th>
+                                        <th class="py-2 px-3">Judul Data</th>
+                                        <th class="py-2 px-3">Foto / File</th>
+                                        <th class="py-2 px-3">Status</th>
+                                        <th id="kolomAksi" class="py-2 px-3 text-center hidden">Aksi Verifikasi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabelDataRT" class="divide-y divide-slate-100">
+                                    <!-- Data dari JS -->
+                                </tbody>
+                            </table>
                         </div>
-                        <button type="submit" class="bg-emerald-500 text-slate-900 font-bold text-sm px-4 py-2 rounded-lg hover:bg-emerald-400 transition">Tambahkan Modul</button>
-                    </form>
+                    </div>
                 </div>
-            </div>
 
-        </main>
+                <!-- MODUL: SUPER ADMIN KONTROL -->
+                <div id="modul-superadmin" class="hidden space-y-6 animasi-muncul">
+                    <div class="bg-slate-800 text-white p-6 rounded-xl shadow-sm border border-slate-700">
+                        <h3 class="text-lg font-bold mb-4 flex items-center gap-2"><i data-feather="settings" class="text-emerald-400"></i> Tambah Fungsi / Modul Baru</h3>
+                        <p class="text-sm text-slate-300 mb-6">Fitur ini hanya dapat diakses oleh Super Admin untuk memperluas fungsi website.</p>
+                        <form onsubmit="tambahModulBaru(event)" class="space-y-4 bg-slate-900 p-4 rounded-lg">
+                            <input type="text" id="inputNamaModul" required placeholder="Nama Modul Baru" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-400">
+                            <button type="submit" class="bg-emerald-500 text-slate-900 font-bold text-sm px-4 py-2 rounded-lg hover:bg-emerald-400">Tambahkan Modul</button>
+                        </form>
+                    </div>
+                </div>
+
+            </main>
+        </div>
     </div>
 
     <script src="script.js"></script>
