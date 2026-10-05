@@ -4,10 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Informasi RT</title>
-    <!-- Memuat CSS -->
+    
+    <!-- Memuat CSS Tailwind dari CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <!-- Memuat Ikon -->
     <script src="https://unpkg.com/feather-icons"></script>
+    
+    <!-- Menghubungkan ke file CSS buatan kita sendiri -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans">
 
@@ -60,8 +65,8 @@
         <main class="md:col-span-3">
             
             <!-- MODUL 1: ADMINISTRASI -->
-            <div id="content-administrasi" class="space-y-6 block">
-                <!-- Form Warga (Hanya tampil jika role = warga) -->
+            <div id="content-administrasi" class="space-y-6 block animasi-muncul">
+                <!-- Form Warga -->
                 <div id="formPengajuanWarga" class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                     <h3 class="text-lg font-bold mb-4 flex items-center gap-2"><i data-feather="plus" class="text-emerald-600"></i> Ajukan Surat Baru</h3>
                     <form onsubmit="ajukanSurat(event)" class="space-y-4">
@@ -71,7 +76,7 @@
                             <option>Pengantar KK</option>
                             <option>Surat Domisili</option>
                         </select>
-                        <button type="submit" class="bg-emerald-600 text-white text-sm px-4 py-2 rounded-lg">Kirim Permohonan</button>
+                        <button type="submit" class="bg-emerald-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-emerald-700 transition">Kirim Permohonan</button>
                     </form>
                 </div>
 
@@ -96,7 +101,7 @@
             </div>
 
             <!-- MODUL 2: KEPENDUDUKAN -->
-            <div id="content-kependudukan" class="hidden space-y-6">
+            <div id="content-kependudukan" class="hidden space-y-6 animasi-muncul">
                 <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                     <h3 class="text-lg font-bold mb-4">Data Penduduk Aktif</h3>
                     <table class="w-full text-left text-sm">
@@ -112,7 +117,7 @@
             </div>
 
             <!-- MODUL 3: KEAMANAN -->
-            <div id="content-keamanan" class="hidden space-y-6">
+            <div id="content-keamanan" class="hidden space-y-6 animasi-muncul">
                 <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                     <h3 class="text-lg font-bold mb-4">Jadwal Siskamling</h3>
                     <ul class="space-y-3 text-sm">
@@ -123,7 +128,7 @@
             </div>
 
             <!-- MODUL 4: SOSIAL -->
-            <div id="content-sosial" class="hidden space-y-6">
+            <div id="content-sosial" class="hidden space-y-6 animasi-muncul">
                 <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                     <h3 class="text-lg font-bold mb-4">Agenda Warga</h3>
                     <div class="p-4 border rounded-xl">
@@ -134,7 +139,7 @@
             </div>
 
             <!-- MODUL 5: INFORMASI -->
-            <div id="content-informasi" class="hidden space-y-6">
+            <div id="content-informasi" class="hidden space-y-6 animasi-muncul">
                 <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                     <h3 class="text-lg font-bold mb-4">Pengumuman RT</h3>
                     <div class="mb-4">
@@ -151,135 +156,7 @@
         </main>
     </div>
 
-    <!-- JavaScript Vanilla -->
-    <script>
-        // Inisialisasi Ikon
-        feather.replace();
-
-        // State Aplikasi
-        let currentRole = 'warga';
-        let currentTab = 'administrasi';
-        
-        let suratData = [
-            { id: 1, nama: 'Budi Santoso', jenis: 'Pengantar SKCK', status: 'Diterima' },
-            { id: 2, nama: 'Siti Rahma', jenis: 'Surat Domisili', status: 'Menunggu' }
-        ];
-
-        // Fungsi Ganti Tab Menu
-        function setTab(tabName) {
-            currentTab = tabName;
-            
-            // Sembunyikan semua konten
-            const tabs = ['administrasi', 'kependudukan', 'keamanan', 'sosial', 'informasi'];
-            tabs.forEach(t => {
-                document.getElementById('content-' + t).classList.add('hidden');
-                
-                // Reset warna tombol menu
-                let btn = document.getElementById('tab-' + t);
-                btn.className = "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition bg-white text-slate-600 border border-slate-200 hover:bg-slate-100";
-            });
-
-            // Tampilkan konten yang dipilih
-            document.getElementById('content-' + tabName).classList.remove('hidden');
-            
-            // Aktifkan warna tombol menu
-            let activeBtn = document.getElementById('tab-' + tabName);
-            activeBtn.className = "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition bg-emerald-600 text-white shadow";
-        }
-
-        // Fungsi Ganti Peran (Role)
-        function setRole(role) {
-            currentRole = role;
-            
-            // Ubah tampilan tombol switcher
-            const btnWarga = document.getElementById('btnRoleWarga');
-            const btnRT = document.getElementById('btnRoleRT');
-            const roleDisplay = document.getElementById('roleDisplay');
-
-            if (role === 'warga') {
-                btnWarga.className = "px-3 py-1 text-sm font-semibold rounded-md transition bg-white text-emerald-800 shadow";
-                btnRT.className = "px-3 py-1 text-sm font-semibold rounded-md transition text-white hover:bg-emerald-700";
-                roleDisplay.innerHTML = `<i data-feather="user-check" class="text-emerald-600"></i> Warga Lingkungan`;
-                document.getElementById('formPengajuanWarga').style.display = 'block';
-            } else {
-                btnRT.className = "px-3 py-1 text-sm font-semibold rounded-md transition bg-amber-400 text-slate-900 shadow";
-                btnWarga.className = "px-3 py-1 text-sm font-semibold rounded-md transition text-white hover:bg-emerald-700";
-                roleDisplay.innerHTML = `<i data-feather="shield" class="text-emerald-600"></i> Ketua RT (Admin)`;
-                document.getElementById('formPengajuanWarga').style.display = 'none';
-            }
-            
-            feather.replace(); // Render ulang ikon baru
-            renderSurat(); // Render ulang tabel untuk menampilkan/menyembunyikan aksi RT
-        }
-
-        // Fungsi Render Data Surat
-        function renderSurat() {
-            const tbody = document.getElementById('tabelSurat');
-            tbody.innerHTML = ''; // Kosongkan tabel
-            
-            // Sembunyikan header "Aksi RT" jika bukan RT
-            const thAksi = document.querySelectorAll('.aksi-rt');
-            thAksi.forEach(th => currentRole === 'rt' ? th.classList.remove('hidden') : th.classList.add('hidden'));
-
-            suratData.forEach(surat => {
-                let badgeColor = surat.status === 'Diterima' ? 'bg-emerald-100 text-emerald-700' : 
-                                 surat.status === 'Ditolak' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700';
-                
-                let tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50";
-                
-                let htmlContent = `
-                    <td class="py-3 px-3 font-medium text-slate-700">${surat.nama}</td>
-                    <td class="py-3 px-3">${surat.jenis}</td>
-                    <td class="py-3 px-3"><span class="px-2 py-1 rounded text-xs font-semibold ${badgeColor}">${surat.status}</span></td>
-                `;
-
-                // Jika peran RT, tambahkan kolom tombol Terima/Tolak
-                if (currentRole === 'rt') {
-                    if (surat.status === 'Menunggu') {
-                        htmlContent += `
-                            <td class="py-3 px-3 text-center space-x-1">
-                                <button onclick="updateStatus(${surat.id}, 'Diterima')" class="px-2 py-1 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded text-xs">Terima</button>
-                                <button onclick="updateStatus(${surat.id}, 'Ditolak')" class="px-2 py-1 bg-rose-50 text-rose-600 border border-rose-200 rounded text-xs">Tolak</button>
-                            </td>`;
-                    } else {
-                        htmlContent += `<td class="py-3 px-3 text-center text-xs text-slate-400">Selesai</td>`;
-                    }
-                }
-
-                tr.innerHTML = htmlContent;
-                tbody.appendChild(tr);
-            });
-        }
-
-        // Fungsi Tambah Surat (Warga)
-        function ajukanSurat(e) {
-            e.preventDefault();
-            const nama = document.getElementById('inputNamaSurat').value;
-            const jenis = document.getElementById('inputJenisSurat').value;
-            
-            suratData.unshift({
-                id: Date.now(),
-                nama: nama,
-                jenis: jenis,
-                status: 'Menunggu'
-            });
-            
-            document.getElementById('inputNamaSurat').value = ''; // Reset input
-            renderSurat();
-        }
-
-        // Fungsi Update Status (Ketua RT)
-        function updateStatus(id, newStatus) {
-            const index = suratData.findIndex(s => s.id === id);
-            if (index !== -1) {
-                suratData[index].status = newStatus;
-                renderSurat();
-            }
-        }
-
-        // Jalankan render awal saat file dibuka
-        renderSurat();
-    </script>
+    <!-- Menghubungkan ke file JavaScript -->
+    <script src="script.js"></script>
 </body>
 </html>
