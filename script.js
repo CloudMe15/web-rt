@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, updateDoc, deleteDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, onSnapshot, updateDoc, deleteDoc, doc, setDoc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCsQemf5eHXIe852eCdJUyLCWJg0dSRmic",
@@ -45,6 +45,61 @@ onSnapshot(collection(db, "data_pelayanan"), (snapshot) => {
     }
 });
 
+// ==========================================
+// FUNGSI LOG AKTIVITAS (AUDIT TRAIL)
+// ==========================================
+async function catatLog(aksi, detail) {
+    let pengguna = currentUser ? currentUser.nama : "Sistem";
+    try {
+        await addDoc(collection(db, "logs_aktivitas"), {
+            waktu: serverTimestamp(),
+            pengguna: pengguna,
+            aksi: aksi,
+            detail: detail
+        });
+    } catch (error) {
+        console.error("Gagal mencatat log aktivitas:", error);
+    }
+}
+
+function muatLogAktivitas() {
+    const tabelLog = document.getElementById('tabelLogAktivitas');
+    if (!tabelLog) return;
+
+    const q = query(collection(db, "logs_aktivitas"), orderBy("waktu", "desc"));
+    onSnapshot(q, (snapshot) => {
+        tabelLog.innerHTML = '';
+        if (snapshot.empty) {
+            tabelLog.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-slate-500 italic">Belum ada aktivitas terekam.</td></tr>';
+            return;
+        }
+
+        snapshot.forEach((dokumen) => {
+            const data = dokumen.data();
+            let waktuAksi = "Baru saja";
+            if(data.waktu) {
+                const dateObj = data.waktu.toDate();
+                waktuAksi = dateObj.toLocaleString('id-ID', {day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'});
+            }
+            
+            tabelLog.innerHTML += `
+                <tr class="hover:bg-slate-50 border-b border-slate-100">
+                    <td class="py-2 px-3 text-slate-500">${waktuAksi}</td>
+                    <td class="py-2 px-3 font-bold text-slate-700">${data.pengguna}</td>
+                    <td class="py-2 px-3">
+                        <span class="bg-slate-200 text-slate-800 px-2 py-1 rounded font-semibold">${data.aksi}</span>
+                    </td>
+                    <td class="py-2 px-3 text-slate-600">${data.detail}</td>
+                </tr>
+            `;
+        });
+    });
+}
+
+
+// ==========================================
+// MANAJEMEN JENIS LAYANAN DESA
+// ==========================================
 function muatJenisLayanan() {
     onSnapshot(doc(db, "pengaturan", "layanan_desa"), (docSnap) => {
         if (docSnap.exists() && docSnap.data().list) {
@@ -83,6 +138,82 @@ function updateDropdownLayananRT() {
     select.value = valSelected;
 }
 
+window.tambahJenisLayanan = async function() {
+    let input = document.getElementById('inputLayananBaru');
+    let namaLayanan = input.value.trim();
+    if(!namaLayanan) {
+        alert("Nama layanan tidak boleh kosong!");
+        return;
+    }
+    if(jenisLayananList.includes(namaLayanan)) {
+        alert("Jenis layanan tersebut sudah ada!");
+        return;
+    }
+    jenisLayananList.push(namaLayanan);
+    await simpanJenisLayananKeDB();
+    
+    catatLog("Tambah Layanan", `Menambahkan jenis layanan baru: "${namaLayanan}"`);
+    
+    input.value = '';
+    renderListLayananSuper();
+    alert("Jenis layanan berhasil ditambahkan!");
+}
+
+window.editJenisLayanan = async function(index) {
+    let namaLama = jenisLayananList[index];
+    let namaBaru = prompt("Perbaiki Nama Layanan:", namaLama);
+    
+    if (namaBaru && namaBaru.trim() !== "" && namaBaru !== namaLama) {
+        if(jenisLayananList.includes(namaBaru.trim())) {
+            return alert("Nama layanan ini sudah ada!");
+        }
+        jenisLayananList[index] = namaBaru.trim();
+        await simpanJenisLayananKeDB();
+        
+        catatLog("Edit Layanan", `Mengubah nama layanan dari "${namaLama}" menjadi "${namaBaru.trim()}"`);
+        
+        renderListLayananSuper();
+        alert("Layanan berhasil diperbarui!");
+    }
+}
+
+window.hapusJenisLayanan = async function(index) {
+    if(jenisLayananList.length <= 1) {
+        alert("Minimal harus ada 1 jenis layanan aktif.");
+        return;
+    }
+    let namaLayanan = jenisLayananList[index];
+    if(confirm(`Yakin ingin menghapus layanan "${namaLayanan}"?`)) {
+        jenisLayananList.splice(index, 1);
+        await simpanJenisLayananKeDB();
+        
+        catatLog("Hapus Layanan", `Menghapus jenis layanan: "${namaLayanan}"`);
+        renderListLayananSuper();
+    }
+}
+
+function renderListLayananSuper() {
+    const container = document.getElementById('daftarListLayanan');
+    if(!container) return;
+    container.innerHTML = '';
+    jenisLayananList.forEach((layanan, index) => {
+        let tag = document.createElement('div');
+        tag.className = "bg-purple-50 border border-purple-200 text-purple-900 text-xs md:text-sm px-3 py-2 rounded-lg flex items-center justify-between gap-4 font-semibold shadow-sm w-full md:w-auto";
+        tag.innerHTML = `
+            <span>📄 ${layanan}</span> 
+            <div class="flex gap-2">
+                <button onclick="editJenisLayanan(${index})" class="bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded text-xs transition shadow flex items-center gap-1"><i data-feather="edit-2" class="w-3 h-3"></i> Edit</button>
+                <button onclick="hapusJenisLayanan(${index})" class="bg-rose-500 hover:bg-rose-600 text-white px-2 py-1 rounded text-xs transition shadow flex items-center gap-1"><i data-feather="trash-2" class="w-3 h-3"></i> Hapus</button>
+            </div>`;
+        container.appendChild(tag);
+    });
+    feather.replace();
+}
+
+
+// ==========================================
+// MANAJEMEN LOGIN & DASHBOARD
+// ==========================================
 window.handleLogin = function(event) {
     event.preventDefault();
     let user = document.getElementById('loginUsername').value.toLowerCase().trim();
@@ -103,6 +234,7 @@ window.handleLogin = function(event) {
         currentUser = databaseAkun[user];
         errDiv.classList.add('hidden');
         bukaDashboard();
+        catatLog("Login Sistem", `${currentUser.nama} berhasil masuk ke dashboard.`);
         return;
     }
 
@@ -139,6 +271,7 @@ function bukaDashboard() {
             if (panelSuper) panelSuper.classList.remove('hidden');
             if (sidebarTitle) sidebarTitle.innerText = "Super Admin Pusat";
             renderListLayananSuper();
+            muatLogAktivitas(); // Menampilkan tabel riwayat aktivitas
         } else {
             if (panelSuper) panelSuper.classList.add('hidden');
             if (sidebarTitle) sidebarTitle.innerText = "Operator Desa";
@@ -151,6 +284,9 @@ function bukaDashboard() {
 }
 
 window.prosesLogout = function() {
+    if(currentUser && currentUser.role !== 'rt') {
+        catatLog("Logout Sistem", `${currentUser.nama} keluar dari dashboard.`);
+    }
     currentUser = null;
     const loginPage = document.getElementById('loginPage');
     const dashboardRT = document.getElementById('dashboardRT');
@@ -162,48 +298,6 @@ window.prosesLogout = function() {
 
     document.getElementById('loginUsername').value = '';
     document.getElementById('loginPassword').value = '';
-}
-
-window.tambahJenisLayanan = async function() {
-    let input = document.getElementById('inputLayananBaru');
-    let namaLayanan = input.value.trim();
-    if(!namaLayanan) {
-        alert("Nama layanan tidak boleh kosong!");
-        return;
-    }
-    if(jenisLayananList.includes(namaLayanan)) {
-        alert("Jenis layanan tersebut sudah ada!");
-        return;
-    }
-    jenisLayananList.push(namaLayanan);
-    await simpanJenisLayananKeDB();
-    input.value = '';
-    renderListLayananSuper();
-    alert("Jenis layanan berhasil ditambahkan!");
-}
-
-window.hapusJenisLayanan = async function(index) {
-    if(jenisLayananList.length <= 1) {
-        alert("Minimal harus ada 1 jenis layanan aktif.");
-        return;
-    }
-    if(confirm(`Yakin ingin menghapus layanan "${jenisLayananList[index]}"?`)) {
-        jenisLayananList.splice(index, 1);
-        await simpanJenisLayananKeDB();
-        renderListLayananSuper();
-    }
-}
-
-function renderListLayananSuper() {
-    const container = document.getElementById('daftarListLayanan');
-    if(!container) return;
-    container.innerHTML = '';
-    jenisLayananList.forEach((layanan, index) => {
-        let tag = document.createElement('div');
-        tag.className = "bg-purple-100 border border-purple-300 text-purple-900 text-xs md:text-sm px-3 py-1.5 rounded-lg flex items-center gap-3 font-semibold shadow-sm";
-        tag.innerHTML = `<span>📄 ${layanan}</span> <button onclick="hapusJenisLayanan(${index})" class="bg-rose-500 hover:bg-rose-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs transition" title="Hapus">&times;</button>`;
-        container.appendChild(tag);
-    });
 }
 
 function kompresGambar(file, maxWidth = 800, quality = 0.6) {
@@ -467,16 +561,20 @@ window.lihatBerkas = function(id) {
 
 window.ubahStatusDariOperator = async function(id, newStatus) {
     try {
+        const data = dataPermohonan.find(d => d.id === id);
         await updateDoc(doc(db, "data_pelayanan", id), { status: newStatus });
+        catatLog("Ubah Status Laporan", `Mengubah status laporan dari ${data.nama} (Tiket: ${data.tiket}) menjadi ${newStatus}`);
     } catch (error) {
         alert("Gagal memperbarui status: " + error.message);
     }
 }
 
 window.hapusLaporanOperator = async function(id) {
+    const data = dataPermohonan.find(d => d.id === id);
     if(confirm("Yakin ingin menghapus permanen laporan ini?")) {
         try {
             await deleteDoc(doc(db, "data_pelayanan", id));
+            catatLog("Hapus Laporan", `Menghapus laporan milik ${data.nama} (Tiket: ${data.tiket})`);
             alert("Laporan berhasil dihapus.");
         } catch (error) {
             alert("Gagal menghapus: " + error.message);
