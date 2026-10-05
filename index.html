@@ -19,11 +19,11 @@
         <div class="bg-white p-6 md:p-8 rounded-lg shadow-2xl w-full max-w-md border-t-4 border-blue-600">
             <div class="text-center mb-6">
                 <h2 class="text-2xl font-bold text-slate-800">Portal Desa Real-Time</h2>
-                <p class="text-sm text-slate-500">Silakan masuk sesuai akun Anda (HP & PC)</p>
+                <p class="text-sm text-slate-500">Silakan masuk sesuai akun Anda (RT / Operator / Super)</p>
             </div>
             
             <form onsubmit="prosesLogin(event)" class="space-y-4">
-                <input type="text" id="loginUsername" required placeholder="Username (contoh: rt1, operator)" class="w-full px-4 py-2.5 border border-slate-300 rounded focus:outline-none focus:border-blue-600 bg-slate-50 text-sm">
+                <input type="text" id="loginUsername" required placeholder="Username (rt1, operator, super)" class="w-full px-4 py-2.5 border border-slate-300 rounded focus:outline-none focus:border-blue-600 bg-slate-50 text-sm">
                 <input type="password" id="loginPassword" required placeholder="Password (isi: 123)" class="w-full px-4 py-2.5 border border-slate-300 rounded focus:outline-none focus:border-blue-600 bg-slate-50 text-sm">
                 <div id="loginError" class="hidden text-rose-600 text-sm font-semibold text-center bg-rose-50 p-2 rounded border border-rose-200">
                     Username atau Password salah!
@@ -59,9 +59,6 @@
                         <label class="block text-xs font-bold text-slate-600 mb-1">Jenis Layanan</label>
                         <select id="rtInputLayanan" required class="w-full border border-slate-300 rounded p-2 text-sm focus:border-emerald-500 bg-slate-50">
                             <option value="">Pilih Jenis Layanan...</option>
-                            <option>Surat Pengantar SKCK</option>
-                            <option>Surat Keterangan Usaha</option>
-                            <option>Surat Keterangan Domisili</option>
                         </select>
                     </div>
                     <div class="md:col-span-2">
@@ -69,7 +66,7 @@
                         <textarea id="rtInputKeperluan" required rows="2" class="w-full border border-slate-300 rounded p-2 text-sm focus:border-emerald-500 bg-slate-50"></textarea>
                     </div>
                     <div class="md:col-span-2 bg-slate-50 p-3 border border-slate-200 rounded">
-                        <label class="block text-xs font-bold text-slate-600 mb-1">Upload Lampiran (Maksimal 500 KB)</label>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Upload Lampiran (KTP/KK - Otomatis Kompres)</label>
                         <input type="file" id="rtInputBerkas" required accept="image/*,application/pdf" class="w-full text-xs file:mr-4 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-emerald-100 file:text-emerald-700 hover:file:bg-emerald-200">
                     </div>
 
@@ -98,11 +95,10 @@
         </main>
     </div>
 
-    <!-- DASHBOARD OPERATOR -->
+    <!-- DASHBOARD OPERATOR / SUPER ADMIN -->
     <div id="dashboardOperator" class="hidden min-h-screen md:h-full flex flex-col md:flex-row overflow-x-hidden">
-        <!-- Sidebar responsif di HP (bisa discroll ke samping/atas) -->
         <aside class="w-full md:w-64 bg-[#222d32] text-slate-300 flex flex-col shrink-0">
-            <div class="h-14 bg-[#367fa9] text-white flex items-center justify-center font-bold text-lg tracking-wide shrink-0">AdminPelayanan</div>
+            <div class="h-14 bg-[#367fa9] text-white flex items-center justify-center font-bold text-lg tracking-wide shrink-0" id="sidebarTitle">AdminPelayanan</div>
             <div class="p-3 md:p-4 flex items-center gap-3 border-b border-slate-700">
                 <div class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-slate-600 flex items-center justify-center text-white font-bold text-base md:text-xl"><i data-feather="user"></i></div>
                 <div>
@@ -110,7 +106,6 @@
                     <p class="text-xs text-emerald-400 flex items-center gap-1 mt-0.5"><span class="w-2 h-2 rounded-full bg-emerald-400 block"></span> Online</p>
                 </div>
             </div>
-            <!-- Menu Filter berbentuk Grid/Flex di HP agar mudah diklik -->
             <nav class="py-2 flex md:flex-col overflow-x-auto gap-1 px-2 md:px-0">
                 <button onclick="filterOpStatus('Semua')" id="menu-Semua" class="op-menu shrink-0 md:w-full flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2 md:py-3 text-xs md:text-sm transition bg-[#1e282c] md:border-l-4 border-[#3c8dbc] text-white rounded md:rounded-none">
                     <i data-feather="database" class="w-3.5 h-3.5"></i> Semua
@@ -133,13 +128,26 @@
         <main class="flex-1 flex flex-col h-full overflow-hidden bg-[#ecf0f5]">
             <header class="h-14 bg-[#3c8dbc] text-white flex items-center justify-between px-4 shadow shrink-0">
                 <div class="flex items-center gap-2">
-                    <span class="font-medium text-xs md:text-sm">Dashboard Operator Real-Time</span>
+                    <span class="font-medium text-xs md:text-sm">Panel Kontrol Desa Real-Time</span>
                 </div>
                 <button onclick="prosesLogout()" class="text-xs md:text-sm font-medium hover:text-rose-200 flex items-center gap-1"><i data-feather="power" class="w-4 h-4"></i> Logout</button>
             </header>
 
             <div class="flex-1 overflow-y-auto p-3 md:p-4 custom-scroll space-y-4">
-                <!-- 4 Kartu Rangkuman (Grid di HP agar rapi) -->
+                
+                <!-- PANEL KHUSUS SUPER ADMIN: KELOLA JENIS LAYANAN -->
+                <div id="panelSuperAdmin" class="hidden bg-white p-4 rounded shadow-sm border-l-4 border-purple-600">
+                    <h4 class="font-bold text-sm text-purple-800 mb-2 flex items-center gap-2"><i data-feather="settings" class="w-4 h-4"></i> Panel Super Admin: Pengaturan Jenis Layanan Desa</h4>
+                    <div class="flex gap-2 mb-3">
+                        <input type="text" id="inputLayananBaru" placeholder="Nama jenis layanan baru (contoh: Surat Keterangan Tidak Mampu)..." class="flex-1 border border-slate-300 rounded p-2 text-xs md:text-sm focus:outline-none focus:border-purple-600">
+                        <button onclick="tambahJenisLayanan()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs md:text-sm px-4 py-2 rounded transition flex items-center gap-1"><i data-feather="plus" class="w-4 h-4"></i> Tambah Layanan</button>
+                    </div>
+                    <div class="flex flex-wrap gap-2" id="daftarListLayanan">
+                        <!-- List layanan dinamis muncul disini -->
+                    </div>
+                </div>
+
+                <!-- 4 Kartu Rangkuman -->
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
                     <div class="bg-[#00c0ef] text-white rounded p-3 md:p-4 relative overflow-hidden shadow-sm flex flex-col justify-between cursor-pointer" onclick="filterOpStatus('Menunggu')">
                         <div><h3 id="countMasuk" class="text-2xl md:text-3xl font-bold mb-0.5">0</h3><p class="text-xs md:text-sm">Masuk</p></div>
@@ -170,7 +178,6 @@
                         </div>
                     </div>
                     
-                    <!-- Tabel dengan pembungkus overflow-x agar bisa digeser di layar HP -->
                     <div class="overflow-x-auto custom-scroll p-3 md:p-4">
                         <table class="w-full text-left text-xs md:text-sm whitespace-nowrap">
                             <thead class="border-b-2 border-slate-200 text-slate-600 font-bold">
@@ -180,7 +187,7 @@
                                     <th class="py-2 pr-2">Nama & WA</th>
                                     <th class="py-2 pr-2">Layanan & Berkas</th>
                                     <th class="py-2 pr-2">Status</th>
-                                    <th class="py-2 text-center">Aksi Status</th>
+                                    <th class="py-2 text-center">Aksi (Status & Hapus)</th>
                                 </tr>
                             </thead>
                             <tbody id="tabelDataOperator" class="divide-y divide-slate-100"></tbody>
