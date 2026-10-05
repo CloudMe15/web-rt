@@ -1,235 +1,214 @@
-feather.replace();
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Pelayanan Desa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        .custom-scroll::-webkit-scrollbar { height: 8px; width: 8px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans h-screen overflow-hidden">
 
-// =====================================
-// 1. DATABASE & STATE (MENDUKUNG 19 RT)
-// =====================================
-const databaseAkun = {
-    'operator': { role: 'operator', nama: 'Operator Desa' },
-    'super': { role: 'super', nama: 'Super Admin' }
-};
+    <!-- ================= HALAMAN LOGIN ================= -->
+    <div id="loginPage" class="flex items-center justify-center h-full bg-slate-800 relative z-50">
+        <div class="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md border-t-4 border-blue-600">
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold text-slate-800">Portal Desa</h2>
+                <p class="text-sm text-slate-500">Silakan masuk sesuai akun Anda</p>
+            </div>
+            
+            <form onsubmit="prosesLogin(event)" class="space-y-4">
+                <input type="text" id="loginUsername" required placeholder="Username (contoh: rt1, rt2, operator)" class="w-full px-4 py-2.5 border border-slate-300 rounded focus:outline-none focus:border-blue-600 bg-slate-50">
+                <input type="password" id="loginPassword" required placeholder="Password (isi: 123)" class="w-full px-4 py-2.5 border border-slate-300 rounded focus:outline-none focus:border-blue-600 bg-slate-50">
+                <div id="loginError" class="hidden text-rose-600 text-sm font-semibold text-center bg-rose-50 p-2 rounded border border-rose-200">
+                    Username atau Password salah!
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2.5 rounded hover:bg-blue-700 transition shadow-md">Masuk</button>
+            </form>
+            
+            <div class="mt-6 p-4 bg-slate-100 rounded text-xs text-slate-600 border border-slate-200">
+                <p class="font-bold mb-1">Daftar Akun Simulasi (Password: 123):</p>
+                <ul class="space-y-1 ml-2">
+                    <li>&bull; <b>rt1</b> sampai <b>rt19</b> &rarr; Untuk masing-masing Ketua RT</li>
+                    <li>&bull; <b>operator</b> &rarr; Untuk Admin Pengelola</li>
+                </ul>
+            </div>
+        </div>
+    </div>
 
-// Data Awal Simulasi (Setiap data memiliki ID RT pengirimnya)
-let dataPermohonan = [
-    { id: 1, rt_id: 'RT 01', tanggal: '2026-10-05 09:55:59', tiket: 'ZG8938', nama: 'Bujang', wa: '082212345678', layanan: 'Surat Pengantar SKCK', keperluan: 'Melamar kerja', status: 'Menunggu' },
-    { id: 2, rt_id: 'RT 02', tanggal: '2026-10-04 12:55:43', tiket: 'QK7474', nama: 'Ali Borkat', wa: '081387613351', layanan: 'Surat Keterangan Usaha', keperluan: 'Usaha warung sembako.', status: 'Diproses' },
-    { id: 3, rt_id: 'RT 01', tanggal: '2026-10-02 10:22:15', tiket: 'OB8024', nama: 'Sumarno', wa: '082247179340', layanan: 'Surat Keterangan Domisili', keperluan: 'Pindah alamat.', status: 'Selesai' },
-    { id: 4, rt_id: 'RT 15', tanggal: '2026-10-01 14:44:39', tiket: 'DK7782', nama: 'Rendra', wa: '085364685445', layanan: 'Keterangan Kelahiran', keperluan: 'Anak pertama lahir.', status: 'Menunggu' }
-];
+    <!-- ================= DASHBOARD RT ================= -->
+    <div id="dashboardRT" class="hidden h-full flex flex-col overflow-y-auto bg-slate-50">
+        <header class="bg-emerald-600 text-white shadow-md py-4 px-6 flex justify-between items-center shrink-0">
+            <div>
+                <h1 id="rtNamaHeader" class="text-xl font-bold">Ketua RT</h1>
+                <p class="text-xs text-emerald-200">Panel Pengajuan Layanan Warga</p>
+            </div>
+            <button onclick="prosesLogout()" class="bg-emerald-800 hover:bg-rose-600 px-4 py-2 rounded text-sm font-bold transition flex gap-2"><i data-feather="log-out" class="w-4 h-4"></i> Keluar</button>
+        </header>
 
-let currentUser = null; 
-let currentStatusOp = 'Semua';
+        <main class="max-w-5xl mx-auto w-full p-6 space-y-6 flex-1">
+            <!-- Form Input RT -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <h3 class="font-bold text-lg text-slate-800 mb-4 flex items-center gap-2"><i data-feather="edit" class="text-emerald-500"></i> Buat Laporan Baru</h3>
+                <form onsubmit="kirimFormulirRT(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Nama Pemohon</label>
+                        <input type="text" id="rtInputNama" required class="w-full border border-slate-300 rounded p-2 text-sm focus:border-emerald-500 bg-slate-50">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Nomor Handphone (WA)</label>
+                        <input type="text" id="rtInputWA" required class="w-full border border-slate-300 rounded p-2 text-sm focus:border-emerald-500 bg-slate-50">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Jenis Layanan</label>
+                        <select id="rtInputLayanan" required class="w-full border border-slate-300 rounded p-2 text-sm focus:border-emerald-500 bg-slate-50">
+                            <option value="">Pilih Jenis Layanan...</option>
+                            <option>Surat Pengantar SKCK</option>
+                            <option>Surat Keterangan Usaha</option>
+                            <option>Surat Keterangan Domisili</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Keterangan / Keperluan</label>
+                        <textarea id="rtInputKeperluan" required rows="2" class="w-full border border-slate-300 rounded p-2 text-sm focus:border-emerald-500 bg-slate-50"></textarea>
+                    </div>
+                    <!-- FITUR BARU: UPLOAD BERKAS OLEH RT -->
+                    <div class="md:col-span-2 bg-slate-50 p-3 border border-slate-200 rounded">
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Upload Data Keperluan / Lampiran Berkas</label>
+                        <input type="file" id="rtInputBerkas" required class="w-full text-sm file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-emerald-100 file:text-emerald-700 hover:file:bg-emerald-200">
+                    </div>
 
-// =====================================
-// 2. SISTEM LOGIN DINAMIS (BACA RT 1 - 19)
-// =====================================
-function prosesLogin(e) {
-    e.preventDefault();
-    let user = document.getElementById('loginUsername').value.toLowerCase().trim();
-    let pass = document.getElementById('loginPassword').value;
+                    <div class="md:col-span-2 flex justify-end mt-2">
+                        <button type="submit" class="bg-emerald-600 text-white font-bold text-sm px-6 py-2.5 rounded shadow hover:bg-emerald-700">Kirim Data & Berkas ke Desa</button>
+                    </div>
+                </form>
+            </div>
 
-    // Cek apakah yang login adalah RT (rt1, rt2 ... rt19)
-    if (user.startsWith('rt') && pass === '123') {
-        let nomorRT = parseInt(user.replace('rt', ''));
-        if (nomorRT >= 1 && nomorRT <= 19) {
-            // Format angka jadi 2 digit (RT 01, RT 02, dst)
-            let rtFormat = nomorRT < 10 ? `RT 0${nomorRT}` : `RT ${nomorRT}`;
-            currentUser = { role: 'rt', nama: `Ketua ${rtFormat}`, rt_id: rtFormat };
-            masukSistem();
-            return;
-        }
-    } 
-    // Cek jika operator/super admin
-    else if (databaseAkun[user] && pass === '123') {
-        currentUser = databaseAkun[user];
-        masukSistem();
-        return;
-    }
+            <!-- Tabel Riwayat RT -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <h3 class="font-bold text-lg text-slate-800 mb-4 flex items-center gap-2"><i data-feather="clock" class="text-emerald-500"></i> Riwayat Layanan Saya</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-100 text-slate-600 border-b">
+                            <tr>
+                                <th class="py-2 px-3">Tiket</th>
+                                <th class="py-2 px-3">Nama Pemohon</th>
+                                <th class="py-2 px-3">Layanan & Lampiran</th>
+                                <th class="py-2 px-3">Status Desa</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelDataRT" class="divide-y divide-slate-100">
+                            <!-- Data JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
 
-    document.getElementById('loginError').classList.remove('hidden');
-}
-
-function masukSistem() {
-    document.getElementById('loginError').classList.add('hidden');
-    document.getElementById('loginPage').style.display = 'none';
-    
-    // Tampilkan Dashboard yang sesuai dengan Role (Sangat Berbeda)
-    if (currentUser.role === 'rt') {
-        document.getElementById('dashboardRT').classList.remove('hidden');
-        document.getElementById('rtNamaHeader').innerText = currentUser.nama;
-        renderTabelRT(); // Hanya me-render data miliknya
-    } else {
-        document.getElementById('dashboardOperator').classList.remove('hidden');
-        document.getElementById('opGreetingName').innerText = currentUser.nama;
-        setupFilterRTDropdown();
-        renderTabelOperator(); // Render semua data dengan filter
-    }
-    feather.replace();
-}
-
-function prosesLogout() {
-    currentUser = null;
-    document.getElementById('dashboardRT').classList.add('hidden');
-    document.getElementById('dashboardOperator').classList.add('hidden');
-    document.getElementById('loginPage').style.display = 'flex';
-    document.getElementById('loginUsername').value = '';
-    document.getElementById('loginPassword').value = '';
-}
-
-// =====================================
-// 3. LOGIKA KHUSUS DASHBOARD RT
-// =====================================
-function kirimFormulirRT(e) {
-    e.preventDefault();
-    const d = new Date();
-    const tgl = d.toISOString().split('T')[0];
-    const jam = d.toTimeString().split(' ')[0];
-    const tiket = 'TK' + Math.floor(Math.random() * 9000 + 1000);
-
-    dataPermohonan.push({
-        id: Date.now(),
-        rt_id: currentUser.rt_id, // Kunci: Label data dengan ID RT pembuatnya
-        tanggal: `${tgl} ${jam}`,
-        tiket: tiket,
-        nama: document.getElementById('rtInputNama').value,
-        wa: document.getElementById('rtInputWA').value,
-        layanan: document.getElementById('rtInputLayanan').value,
-        keperluan: document.getElementById('rtInputKeperluan').value,
-        status: 'Menunggu'
-    });
-
-    e.target.reset();
-    alert(`Sukses! Laporan Anda telah dikirim ke Operator Desa.\nNomor Tiket: ${tiket}`);
-    renderTabelRT();
-}
-
-function renderTabelRT() {
-    const tbody = document.getElementById('tabelDataRT');
-    tbody.innerHTML = '';
-    
-    // FILTER: Hanya ambil data permohonan yang ID RT-nya sama dengan yang sedang login!
-    let dataMilikRT = dataPermohonan.filter(d => d.rt_id === currentUser.rt_id).reverse();
-
-    dataMilikRT.forEach(data => {
-        let statusStyle = data.status === 'Selesai' ? 'text-green-600' : (data.status === 'Dibatalkan' ? 'text-red-600' : 'text-orange-500');
+    <!-- ================= DASHBOARD OPERATOR ================= -->
+    <div id="dashboardOperator" class="hidden h-full flex flex-col md:flex-row">
         
-        let tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td class="py-3 px-3 text-xs font-mono">${data.tiket}</td>
-            <td class="py-3 px-3 font-semibold text-slate-700">${data.nama}</td>
-            <td class="py-3 px-3 text-xs">${data.layanan}</td>
-            <td class="py-3 px-3 font-bold ${statusStyle}">${data.status}</td>
-        `;
-        tbody.appendChild(tr);
-    });
+        <aside class="w-full md:w-64 bg-[#222d32] text-slate-300 flex flex-col h-full shrink-0 overflow-y-auto">
+            <div class="h-14 bg-[#367fa9] text-white flex items-center justify-center font-bold text-lg tracking-wide shrink-0">AdminPelayanan</div>
+            
+            <div class="p-4 flex items-center gap-3 border-b border-slate-700">
+                <div class="w-12 h-12 rounded-full bg-slate-600 flex items-center justify-center text-white font-bold text-xl"><i data-feather="user"></i></div>
+                <div>
+                    <p id="opGreetingName" class="text-sm font-bold text-white leading-tight">Operator</p>
+                    <p class="text-xs text-emerald-400 flex items-center gap-1 mt-0.5"><span class="w-2 h-2 rounded-full bg-emerald-400 block"></span> Online</p>
+                </div>
+            </div>
 
-    if(dataMilikRT.length === 0) tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-slate-500 italic">Belum ada laporan dari lingkungan Anda.</td></tr>`;
-}
+            <nav class="flex-1 py-2">
+                <p class="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 mt-2">Filter Status</p>
+                <button onclick="filterOpStatus('Semua')" id="menu-Semua" class="op-menu w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-[#1e282c] hover:text-white transition bg-[#1e282c] border-l-4 border-[#3c8dbc] text-white">
+                    <i data-feather="database" class="w-4 h-4"></i> Semua Data
+                </button>
+                <button onclick="filterOpStatus('Menunggu')" id="menu-Menunggu" class="op-menu w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-[#1e282c] hover:text-white transition border-l-4 border-transparent text-slate-400">
+                    <i data-feather="message-square" class="w-4 h-4"></i> Layanan Masuk
+                </button>
+                <button onclick="filterOpStatus('Diproses')" id="menu-Diproses" class="op-menu w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-[#1e282c] hover:text-white transition border-l-4 border-transparent text-slate-400">
+                    <i data-feather="refresh-cw" class="w-4 h-4"></i> Layanan Diproses
+                </button>
+                <button onclick="filterOpStatus('Selesai')" id="menu-Selesai" class="op-menu w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-[#1e282c] hover:text-white transition border-l-4 border-transparent text-slate-400">
+                    <i data-feather="check-circle" class="w-4 h-4"></i> Layanan Selesai
+                </button>
+                <button onclick="filterOpStatus('Dibatalkan')" id="menu-Dibatalkan" class="op-menu w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-[#1e282c] hover:text-white transition border-l-4 border-transparent text-slate-400">
+                    <i data-feather="x-circle" class="w-4 h-4"></i> Layanan Dibatalkan
+                </button>
+            </nav>
+        </aside>
 
-// =====================================
-// 4. LOGIKA KHUSUS DASHBOARD OPERATOR
-// =====================================
-function setupFilterRTDropdown() {
-    const dropdown = document.getElementById('opFilterRT');
-    dropdown.innerHTML = '<option value="Semua">Semua RT (1-19)</option>';
-    // Buat opsi RT 01 sampai RT 19
-    for (let i = 1; i <= 19; i++) {
-        let rtStr = i < 10 ? `RT 0${i}` : `RT ${i}`;
-        dropdown.innerHTML += `<option value="${rtStr}">${rtStr}</option>`;
-    }
-}
+        <main class="flex-1 flex flex-col h-full overflow-hidden bg-[#ecf0f5]">
+            <header class="h-14 bg-[#3c8dbc] text-white flex items-center justify-between px-4 shadow shrink-0">
+                <div class="flex items-center gap-3">
+                    <i data-feather="menu" class="hidden md:block"></i>
+                    <span class="font-medium text-sm">Halaman Data Laporan & Berkas</span>
+                </div>
+                <button onclick="prosesLogout()" class="text-sm font-medium hover:text-rose-200 flex items-center gap-1"><i data-feather="power" class="w-4 h-4"></i> Logout</button>
+            </header>
 
-function filterOpStatus(status) {
-    currentStatusOp = status;
-    
-    // Ubah Judul Tabel
-    document.getElementById('judulTabelOp').innerText = status === 'Semua' ? 'Semua Data Layanan' : `Data Layanan: ${status}`;
+            <div class="flex-1 overflow-y-auto p-4 custom-scroll space-y-4">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-[#00c0ef] text-white rounded p-4 relative overflow-hidden shadow-sm flex flex-col justify-between cursor-pointer" onclick="filterOpStatus('Menunggu')">
+                        <div><h3 id="countMasuk" class="text-3xl font-bold mb-1">0</h3><p class="text-sm">Layanan Masuk</p></div>
+                        <i data-feather="message-square" class="absolute -right-2 -bottom-2 w-20 h-20 opacity-20 text-black"></i>
+                    </div>
+                    <div class="bg-[#f39c12] text-white rounded p-4 relative overflow-hidden shadow-sm flex flex-col justify-between cursor-pointer" onclick="filterOpStatus('Diproses')">
+                        <div><h3 id="countProses" class="text-3xl font-bold mb-1">0</h3><p class="text-sm">Layanan Diproses</p></div>
+                        <i data-feather="refresh-cw" class="absolute -right-2 -bottom-2 w-20 h-20 opacity-20 text-black"></i>
+                    </div>
+                    <div class="bg-[#00a65a] text-white rounded p-4 relative overflow-hidden shadow-sm flex flex-col justify-between cursor-pointer" onclick="filterOpStatus('Selesai')">
+                        <div><h3 id="countSelesai" class="text-3xl font-bold mb-1">0</h3><p class="text-sm">Layanan Selesai</p></div>
+                        <i data-feather="check-square" class="absolute -right-2 -bottom-2 w-20 h-20 opacity-20 text-black"></i>
+                    </div>
+                    <div class="bg-[#dd4b39] text-white rounded p-4 relative overflow-hidden shadow-sm flex flex-col justify-between cursor-pointer" onclick="filterOpStatus('Dibatalkan')">
+                        <div><h3 id="countBatal" class="text-3xl font-bold mb-1">0</h3><p class="text-sm">Layanan Dibatalkan</p></div>
+                        <i data-feather="x-circle" class="absolute -right-2 -bottom-2 w-20 h-20 opacity-20 text-black"></i>
+                    </div>
+                </div>
 
-    // Styling Menu Aktif Sidebar Operator
-    document.querySelectorAll('.op-menu').forEach(el => {
-        el.classList.remove('bg-[#1e282c]', 'border-[#3c8dbc]', 'text-white');
-        el.classList.add('border-transparent', 'text-slate-400');
-    });
-    let activeMenu = document.getElementById('menu-' + status);
-    if(activeMenu) {
-        activeMenu.classList.remove('border-transparent', 'text-slate-400');
-        activeMenu.classList.add('bg-[#1e282c]', 'border-[#3c8dbc]', 'text-white');
-    }
+                <div class="bg-white border-t-2 border-[#3c8dbc] shadow-sm rounded-b">
+                    <div class="bg-[#3c8dbc] text-white px-4 py-2 text-sm font-bold flex flex-wrap justify-between items-center gap-2">
+                        <span id="judulTabelOp">Semua Data Layanan</span>
+                        <div class="flex items-center gap-2 text-xs">
+                            <span>Filter Lingkungan:</span>
+                            <select id="opFilterRT" onchange="renderTabelOperator()" class="text-slate-800 rounded px-2 py-1 outline-none">
+                                <option value="Semua">Semua RT (1-19)</option>
+                                <!-- Option digenerate oleh JS -->
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="overflow-x-auto custom-scroll p-4">
+                        <table class="w-full text-left text-xs md:text-sm">
+                            <thead class="border-b-2 border-slate-200 text-slate-600 font-bold">
+                                <tr>
+                                    <th class="py-2 pr-2">Pengirim</th>
+                                    <th class="py-2 pr-2">Tgl / Tiket</th>
+                                    <th class="py-2 pr-2">Nama & WA</th>
+                                    <th class="py-2 pr-2">Layanan & Berkas RT</th>
+                                    <th class="py-2 pr-2">Status</th>
+                                    <th class="py-2 text-center">Aksi Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelDataOperator" class="divide-y divide-slate-100">
+                                <!-- Data JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
 
-    renderTabelOperator();
-}
-
-function renderTabelOperator() {
-    // 1. Ambil nilai filter
-    const filterRT = document.getElementById('opFilterRT').value; // 'Semua' atau 'RT 01', dll.
-    
-    // 2. Lakukan penyaringan bertingkat (Filter RT -> Filter Status)
-    let filteredData = dataPermohonan;
-
-    // Filter berdasarkan RT (Jika Operator memilih RT tertentu)
-    if (filterRT !== 'Semua') {
-        filteredData = filteredData.filter(d => d.rt_id === filterRT);
-    }
-
-    // Update Angka Kartu (Berdasarkan RT yang dipilih!)
-    let masuk = 0, proses = 0, selesai = 0, batal = 0;
-    filteredData.forEach(d => {
-        if(d.status === 'Menunggu') masuk++;
-        if(d.status === 'Diproses') proses++;
-        if(d.status === 'Selesai') selesai++;
-        if(d.status === 'Dibatalkan') batal++;
-    });
-    document.getElementById('countMasuk').innerText = masuk;
-    document.getElementById('countProses').innerText = proses;
-    document.getElementById('countSelesai').innerText = selesai;
-    document.getElementById('countBatal').innerText = batal;
-
-    // Filter berdasarkan Status Menu Sidebar
-    if (currentStatusOp !== 'Semua') {
-        filteredData = filteredData.filter(d => d.status === currentStatusOp);
-    }
-    
-    filteredData.sort((a,b) => b.id - a.id); // Teratas yang terbaru
-
-    // 3. Render Baris HTML
-    const tbody = document.getElementById('tabelDataOperator');
-    tbody.innerHTML = '';
-
-    filteredData.forEach(data => {
-        let statusColor = "text-slate-600";
-        if(data.status === 'Menunggu') statusColor = "text-[#00c0ef] font-bold";
-        if(data.status === 'Diproses') statusColor = "text-[#f39c12] font-bold";
-        if(data.status === 'Selesai') statusColor = "text-[#00a65a] font-bold";
-        if(data.status === 'Dibatalkan') statusColor = "text-[#dd4b39] font-bold";
-
-        let tr = document.createElement('tr');
-        tr.className = "hover:bg-slate-50 text-slate-700";
-        tr.innerHTML = `
-            <td class="py-3 pr-2 align-top"><span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded font-bold">${data.rt_id}</span></td>
-            <td class="py-3 pr-2 align-top text-xs">${data.tanggal.split(' ')[0]}<br><span class="font-mono font-bold">${data.tiket}</span></td>
-            <td class="py-3 pr-2 align-top text-xs"><span class="font-bold text-sm">${data.nama}</span><br>${data.wa}</td>
-            <td class="py-3 pr-2 align-top text-xs"><span class="font-bold">${data.layanan}</span><br><span class="text-slate-500">${data.keperluan}</span></td>
-            <td class="py-3 pr-2 align-top ${statusColor} text-xs">${data.status}</td>
-            <td class="py-3 align-top text-center">
-                <select onchange="ubahStatusDariOperator(${data.id}, this.value)" class="text-xs border border-slate-300 rounded p-1 focus:outline-none cursor-pointer">
-                    <option value="Menunggu" ${data.status === 'Menunggu' ? 'selected' : ''}>Menunggu</option>
-                    <option value="Diproses" ${data.status === 'Diproses' ? 'selected' : ''}>Diproses</option>
-                    <option value="Selesai" ${data.status === 'Selesai' ? 'selected' : ''}>Selesai</option>
-                    <option value="Dibatalkan" ${data.status === 'Dibatalkan' ? 'selected' : ''}>Dibatalkan</option>
-                </select>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
-
-    if(filteredData.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-500 text-sm italic">Tidak ada data ditemukan.</td></tr>`;
-    }
-}
-
-function ubahStatusDariOperator(id, newStatus) {
-    const index = dataPermohonan.findIndex(d => d.id === id);
-    if (index !== -1) {
-        dataPermohonan[index].status = newStatus;
-        renderTabelOperator(); 
-    }
-}
+    <script src="script.js"></script>
+</body>
+</html>
