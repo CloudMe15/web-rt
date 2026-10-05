@@ -14,7 +14,6 @@
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen md:h-screen md:overflow-hidden flex flex-col">
 
-    <!-- HALAMAN LOGIN -->
     <div id="loginPage" class="flex items-center justify-center min-h-screen bg-slate-800 relative z-50 p-4">
         <div class="bg-white p-6 md:p-8 rounded-lg shadow-2xl w-full max-w-md border-t-4 border-blue-600">
             <div class="text-center mb-6">
@@ -22,7 +21,7 @@
                 <p class="text-sm text-slate-500">Silakan masuk sesuai akun Anda (rt1-rt19, operator, super)</p>
             </div>
             
-            <form onsubmit="prosesLogin(event)" class="space-y-4">
+            <form id="formLogin" class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-600 mb-1">Username</label>
                     <input type="text" id="loginUsername" required placeholder="Contoh: rt1, operator, super" class="w-full px-4 py-2.5 border border-slate-300 rounded focus:outline-none focus:border-blue-600 bg-slate-50 text-sm">
@@ -39,20 +38,19 @@
         </div>
     </div>
 
-    <!-- DASHBOARD RT -->
     <div id="dashboardRT" class="hidden min-h-screen md:h-full flex flex-col overflow-y-auto bg-slate-50">
         <header class="bg-emerald-600 text-white shadow-md py-3 px-4 md:px-6 flex justify-between items-center shrink-0">
             <div>
                 <h1 id="rtNamaHeader" class="text-base md:text-xl font-bold">Ketua RT</h1>
                 <p class="text-[10px] md:text-xs text-emerald-200">Panel Pengajuan Layanan Warga</p>
             </div>
-            <button onclick="prosesLogout()" class="bg-emerald-800 hover:bg-rose-600 px-3 py-1.5 rounded text-xs font-bold transition flex items-center gap-1"><i data-feather="log-out" class="w-3.5 h-3.5"></i> Keluar</button>
+            <button id="btnLogoutRT" class="bg-emerald-800 hover:bg-rose-600 px-3 py-1.5 rounded text-xs font-bold transition flex items-center gap-1"><i data-feather="log-out" class="w-3.5 h-3.5"></i> Keluar</button>
         </header>
 
         <main class="max-w-5xl mx-auto w-full p-4 md:p-6 space-y-6 flex-1">
             <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
                 <h3 class="font-bold text-base md:text-lg text-slate-800 mb-4 flex items-center gap-2"><i data-feather="edit" class="text-emerald-500 w-5 h-5"></i> Buat Laporan Baru</h3>
-                <form onsubmit="kirimFormulirRT(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <form id="formLaporanRT" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-600 mb-1">Nama Pemohon</label>
                         <input type="text" id="rtInputNama" required class="w-full border border-slate-300 rounded p-2 text-sm focus:border-emerald-500 bg-slate-50">
@@ -101,7 +99,6 @@
         </main>
     </div>
 
-    <!-- DASHBOARD OPERATOR / SUPER ADMIN -->
     <div id="dashboardOperator" class="hidden min-h-screen md:h-full flex flex-col md:flex-row overflow-x-hidden">
         <aside class="w-full md:w-64 bg-[#222d32] text-slate-300 flex flex-col shrink-0">
             <div class="h-14 bg-[#367fa9] text-white flex items-center justify-center font-bold text-lg tracking-wide shrink-0" id="sidebarTitle">AdminPelayanan</div>
@@ -125,34 +122,4 @@
                 <button onclick="filterOpStatus('Selesai')" id="menu-Selesai" class="op-menu shrink-0 md:w-full flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2 md:py-3 text-xs md:text-sm transition md:border-l-4 border-transparent text-slate-400 hover:text-white rounded md:rounded-none">
                     <i data-feather="check-circle" class="w-3.5 h-3.5"></i> Selesai
                 </button>
-                <button onclick="filterOpStatus('Dibatalkan')" id="menu-Dibatalkan" class="op-menu shrink-0 md:w-full flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2 md:py-3 text-xs md:text-sm transition md:border-l-4 border-transparent text-slate-400 hover:text-white rounded md:rounded-none">
-                    <i data-feather="x-circle" class="w-3.5 h-3.5"></i> Batal
-                </button>
-            </nav>
-        </aside>
-
-        <main class="flex-1 flex flex-col h-full overflow-hidden bg-[#ecf0f5]">
-            <header class="h-14 bg-[#3c8dbc] text-white flex items-center justify-between px-4 shadow shrink-0">
-                <div class="flex items-center gap-2">
-                    <span class="font-medium text-xs md:text-sm">Panel Kontrol Desa Real-Time</span>
-                </div>
-                <button onclick="prosesLogout()" class="text-xs md:text-sm font-medium hover:text-rose-200 flex items-center gap-1"><i data-feather="power" class="w-4 h-4"></i> Logout</button>
-            </header>
-
-            <div class="flex-1 overflow-y-auto p-3 md:p-4 custom-scroll space-y-4">
-                
-                <!-- PANEL SUPER ADMIN: KELOLA LAYANAN -->
-                <div id="panelSuperAdmin" class="hidden bg-white p-4 rounded shadow-sm border-l-4 border-purple-600">
-                    <h4 class="font-bold text-sm text-purple-800 mb-2 flex items-center gap-2"><i data-feather="settings" class="w-4 h-4"></i> Panel Super Admin: Pengaturan Jenis Layanan Desa</h4>
-                    <div class="flex gap-2 mb-3">
-                        <input type="text" id="inputLayananBaru" placeholder="Nama jenis layanan baru..." class="flex-1 border border-slate-300 rounded p-2 text-xs md:text-sm focus:outline-none focus:border-purple-600">
-                        <button onclick="tambahJenisLayanan()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs md:text-sm px-4 py-2 rounded transition flex items-center gap-1"><i data-feather="plus" class="w-4 h-4"></i> Tambah Layanan</button>
-                    </div>
-                    <div class="flex flex-wrap gap-2" id="daftarListLayanan"></div>
-                </div>
-
-                <!-- 4 KARTU RANGKUMAN -->
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-                    <div class="bg-[#00c0ef] text-white rounded p-3 md:p-4 relative overflow-hidden shadow-sm flex flex-col justify-between cursor-pointer" onclick="filterOpStatus('Menunggu')">
-                        <div><h3 id="countMasuk" class="text-2xl md:text-3xl font-bold mb-0.5">0</h3><p class="text-xs md:text-sm">Masuk</p></div>
-                        <i data-feather="message-square" class="absolute -right-2 -bottom-
+                <button onclick="
