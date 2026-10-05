@@ -1,8 +1,8 @@
-// Mengimpor library Firebase Firestore secara Modular (Sesuai Standar Firebase Terbaru)
+// Mengimpor library Firebase Firestore secara Modular
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js";
 
-// 1. Konfigurasi Firebase dari akun Anda
+// Konfigurasi Firebase dari akun Anda
 const firebaseConfig = {
     apiKey: "AIzaSyCsQemf5eHXIe852eCdJUyLCWJg0dSRmic",
     authDomain: "pelanyan-desa.firebaseapp.com",
@@ -13,7 +13,7 @@ const firebaseConfig = {
     appId: "1:591465838495:web:23c89115c0bd01d8d0afaa"
 };
 
-// 2. Inisialisasi Firebase & Firestore
+// Inisialisasi Firebase & Firestore
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
@@ -29,18 +29,17 @@ let dataPermohonan = [];
 let currentUser = null; 
 let currentStatusOp = 'Semua';
 
-// 3. FITUR REAL-TIME LISTENER (Inti dari Firebase)
-// Fungsi ini mendengarkan database Firebase. Setiap ada RT yang kirim data, layar semua orang terupdate otomatis!
+// =====================================
+// LISTENER REAL-TIME FIREBASE
+// =====================================
 onSnapshot(collection(db, "data_pelayanan"), (snapshot) => {
     dataPermohonan = [];
     snapshot.forEach((doc) => {
         dataPermohonan.push({ id: doc.id, ...doc.data() });
     });
     
-    // Sort manual berdasarkan waktu pengiriman
     dataPermohonan.sort((a, b) => b.waktuSistem - a.waktuSistem);
 
-    // Otomatis refresh UI yang sedang aktif
     if (currentUser) {
         if (currentUser.role === 'rt') {
             renderTabelRT();
@@ -84,7 +83,7 @@ function masukSistem() {
         document.getElementById('rtNamaHeader').innerText = currentUser.nama;
         renderTabelRT();
     } else {
-        document.getElementById('dashboardOperator').classList.remove('hidden');
+        document.getElementById('dashboardOperator').classList.min?.('hidden') || document.getElementById('dashboardOperator').classList.remove('hidden');
         document.getElementById('opGreetingName').innerText = currentUser.nama;
         setupFilterRTDropdown();
         renderTabelOperator();
@@ -102,7 +101,7 @@ window.prosesLogout = function() {
 }
 
 // =====================================
-// LOGIKA RT (KIRIM DATA KE FIREBASE)
+// LOGIKA RT (KIRIM DATA & UPLOAD)
 // =====================================
 window.kirimFormulirRT = async function(e) {
     e.preventDefault();
@@ -116,22 +115,19 @@ window.kirimFormulirRT = async function(e) {
     const fileInput = document.getElementById('rtInputBerkas');
     const file = fileInput.files[0];
 
-    // Batasi ukuran file (Max 800 KB) agar muat di teks Firebase
-    if (file && file.size > 800000) {
-        alert("Maaf, ukuran file terlalu besar! Maksimal 800 KB. Silakan kompres foto Anda terlebih dahulu.");
+    if (file && file.size > 500000) {
+        alert("Maaf, ukuran file terlalu besar! Maksimal 500 KB.\nSilakan kecilkan ukuran foto Anda terlebih dahulu.");
         return;
     }
 
-    btnKirim.innerText = "Mengirim ke Cloud...";
+    btnKirim.innerText = "Mengunggah ke Server...";
     btnKirim.disabled = true;
-    btnKirim.classList.add('opacity-50');
+    btnKirim.classList.add('opacity-50', 'cursor-not-allowed');
 
-    // Ubah file menjadi teks (Base64)
     const reader = new FileReader();
     reader.onload = async function(eResult) {
         const fileBase64 = eResult.target.result;
 
-        // Proses mengirim (*push*) ke Firebase Firestore
         try {
             await addDoc(collection(db, "data_pelayanan"), {
                 rt_id: currentUser.rt_id,
@@ -142,7 +138,7 @@ window.kirimFormulirRT = async function(e) {
                 layanan: document.getElementById('rtInputLayanan').value,
                 keperluan: document.getElementById('rtInputKeperluan').value,
                 namaFile: file.name,
-                fileData: fileBase64, // Disimpan sebagai string panjang
+                fileData: fileBase64,
                 status: 'Menunggu',
                 waktuSistem: Date.now()
             });
@@ -155,15 +151,15 @@ window.kirimFormulirRT = async function(e) {
             
             alert(`Sukses! Data telah tersimpan permanen di Server Desa.\nNomor Tiket: ${tiket}`);
         } catch (error) {
-            alert("Terjadi kesalahan saat mengirim ke Firebase: " + error.message);
+            alert("Gagal terhubung ke database. Error: " + error.message);
         }
 
         btnKirim.innerText = "Kirim Data & Berkas ke Desa";
         btnKirim.disabled = false;
-        btnKirim.classList.remove('opacity-50');
+        btnKirim.classList.remove('opacity-50', 'cursor-not-allowed');
     };
     
-    if(file) reader.readAsDataURL(file); // Mulai proses pembacaan file
+    if(file) reader.readAsDataURL(file); 
 }
 
 function renderTabelRT() {
@@ -175,15 +171,31 @@ function renderTabelRT() {
     dataMilikRT.forEach(data => {
         let statusStyle = data.status === 'Selesai' ? 'text-green-600' : (data.status === 'Dibatalkan' ? 'text-red-600' : 'text-orange-500');
         
+        // Membersihkan format nomor HP untuk tautan WhatsApp (mengubah 08... menjadi 628...)
+        let waClean = data.wa.replace(/[^0-9]/g, '');
+        if (waClean.startsWith('0')) {
+            waClean = '62' + waClean.substring(1);
+        }
+
+        let pesanWA = `Halo Bpk/Ibu ${data.nama}, permohonan layanan *${data.layanan}* Anda di lingkungan ${data.rt_id} telah dikirim ke Kantor Desa.\n\nNomor Tiket Anda: *${data.tiket}*\nStatus: *${data.status}*\n\nSimpan pesan ini sebagai bukti pengajuan sah. Terima kasih.`;
+        let linkWA = `https://wa.me/${waClean}?text=${encodeURIComponent(pesanWA)}`;
+
         let tr = document.createElement('tr');
         tr.innerHTML = `
-            <td class="py-3 px-3 text-xs font-mono">${data.tiket}</td>
-            <td class="py-3 px-3 font-semibold text-slate-700">${data.nama}</td>
-            <td class="py-3 px-3 text-xs">
+            <td class="py-3 px-3 text-xs font-mono align-top">${data.tiket}</td>
+            <td class="py-3 px-3 font-semibold text-slate-700 align-top">${data.nama}</td>
+            <td class="py-3 px-3 text-xs align-top">
                 ${data.layanan}
                 <div class="mt-1 text-blue-500 flex items-center gap-1"><i data-feather="paperclip" class="w-3 h-3"></i> ${data.namaFile}</div>
             </td>
-            <td class="py-3 px-3 font-bold ${statusStyle}">${data.status}</td>
+            <td class="py-3 px-3 font-bold ${statusStyle} align-top">
+                ${data.status}
+                <div class="mt-2">
+                    <a href="${linkWA}" target="_blank" class="inline-flex items-center gap-1 bg-emerald-500 hover:bg-emerald-600 text-white px-2.5 py-1 rounded text-[11px] font-bold shadow-sm transition">
+                        <i data-feather="message-circle" class="w-3 h-3"></i> Kirim WA ke Warga
+                    </a>
+                </div>
+            </td>
         `;
         tbody.appendChild(tr);
     });
@@ -287,20 +299,25 @@ window.renderTabelOperator = function() {
     feather.replace();
 }
 
-// Fitur Baru: Membuka gambar/PDF dari Cloud
 window.lihatBerkas = function(id) {
     const data = dataPermohonan.find(d => d.id === id);
     if(data && data.fileData) {
-        // Membuka tab baru yang menampilkan gambar atau dokumen tersebut
         let newWindow = window.open();
-        newWindow.document.write(`<iframe src="${data.fileData}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`);
+        if(!newWindow) {
+            alert("Browser Anda memblokir Pop-up! Izinkan pop-up untuk melihat berkas.");
+            return;
+        }
+        if (data.fileData.startsWith("data:image")) {
+            newWindow.document.write(`<body style="margin:0; background:#222; display:flex; justify-content:center; align-items:center; height:100vh;"><img src="${data.fileData}" style="max-width:100%; max-height:100vh; object-fit:contain;" /></body>`);
+        } else {
+            newWindow.document.write(`<body style="margin:0;"><iframe src="${data.fileData}" frameborder="0" style="border:0; width:100vw; height:100vh;" allowfullscreen></iframe></body>`);
+        }
     } else {
-        alert("Berkas tidak ditemukan atau rusak.");
+        alert("Berkas tidak ditemukan.");
     }
 }
 
 window.ubahStatusDariOperator = async function(id, newStatus) {
-    // Menyimpan perubahan status langsung ke Database Firebase
     try {
         await updateDoc(doc(db, "data_pelayanan", id), {
             status: newStatus
