@@ -1,212 +1,244 @@
 feather.replace();
 
-let currentRole = 'warga';
-let currentTab = 'administrasi';
+// =====================================
+// 1. DATABASE SIMULASI
+// =====================================
+const databaseAkun = {
+    'rt': { password: '123', role: 'rt', nama: 'Bapak Ketua RT' },
+    'admin': { password: '123', role: 'admin', nama: 'Admin Verifikator' },
+    'super': { password: '123', role: 'superadmin', nama: 'Super Admin Pusat' }
+};
 
-// Data surat sekarang memiliki kolom dokumen
-let suratData = [
-    { id: 1, nama: 'Budi Santoso', jenis: 'Pengantar SKCK', dokumen: 'KTP_Budi.jpg', status: 'Diterima' },
-    { id: 2, nama: 'Siti Rahma', jenis: 'Surat Domisili', dokumen: 'Berkas_Pindah.pdf', status: 'Menunggu' }
+let dataUploadRT = [
+    { id: 1, tanggal: '2026-10-05', judul: 'Foto Kegiatan Posyandu', file: 'posyandu.jpg', status: 'Menunggu' },
+    { id: 2, tanggal: '2026-10-04', judul: 'Laporan Kas Warga', file: 'laporan_kas.pdf', status: 'Benar' }
 ];
 
-let daftarModul = ['administrasi', 'kependudukan', 'superadmin'];
+let currentUser = null; // Menyimpan status siapa yang sedang login
+let daftarModul = ['upload', 'verifikasi', 'superadmin'];
 
-// FUNGSI NAVIGASI
-function setTab(tabName) {
-    currentTab = tabName;
-    
-    daftarModul.forEach(t => {
-        let contentEl = document.getElementById('content-' + t);
-        let btnEl = document.getElementById('tab-' + t);
+// =====================================
+// 2. SISTEM LOGIN & LOGOUT
+// =====================================
+function prosesLogin(e) {
+    e.preventDefault();
+    const user = document.getElementById('loginUsername').value;
+    const pass = document.getElementById('loginPassword').value;
+
+    if (databaseAkun[user] && databaseAkun[user].password === pass) {
+        // Login Sukses
+        currentUser = databaseAkun[user];
+        document.getElementById('loginError').classList.add('hidden');
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('dashboardPage').style.display = 'block';
         
-        if(contentEl) contentEl.classList.add('hidden');
-        if(btnEl) {
-            if (t === 'superadmin') {
-                btnEl.className = "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition bg-white text-slate-600 border border-slate-200 hover:bg-slate-100";
-            } else {
-                btnEl.className = "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition bg-white text-slate-600 border border-slate-200 hover:bg-slate-100";
-            }
-        }
+        setupDashboard(); // Atur tampilan sesuai peran
+    } else {
+        // Login Gagal
+        document.getElementById('loginError').classList.remove('hidden');
+    }
+}
+
+function prosesLogout() {
+    currentUser = null;
+    document.getElementById('dashboardPage').style.display = 'none';
+    document.getElementById('loginPage').style.display = 'flex';
+    document.getElementById('loginUsername').value = '';
+    document.getElementById('loginPassword').value = '';
+}
+
+// =====================================
+// 3. PENGATURAN DASHBOARD SESUAI PERAN
+// =====================================
+function setupDashboard() {
+    document.getElementById('userGreeting').innerText = 'Halo, ' + currentUser.nama;
+    
+    const roleIcon = document.getElementById('roleIcon');
+    const roleTitle = document.getElementById('roleTitle');
+    const menuContainer = document.getElementById('menuContainer');
+    
+    menuContainer.innerHTML = ''; // Kosongkan menu sebelumnya
+
+    // A. JIKA LOGIN SEBAGAI RT
+    if (currentUser.role === 'rt') {
+        roleIcon.setAttribute('data-feather', 'camera');
+        roleTitle.innerText = 'Ketua RT';
+        buatTombolMenu('upload', 'Upload Data', 'upload-cloud');
+        buatTombolMenu('verifikasi', 'Riwayat Data Saya', 'file-text');
+        bukaModul('upload');
+    } 
+    // B. JIKA LOGIN SEBAGAI ADMIN VERIFIKATOR
+    else if (currentUser.role === 'admin') {
+        roleIcon.setAttribute('data-feather', 'check-circle');
+        roleTitle.innerText = 'Admin Verifikasi';
+        buatTombolMenu('verifikasi', 'Verifikasi Data RT', 'check-square');
+        bukaModul('verifikasi');
+    }
+    // C. JIKA LOGIN SEBAGAI SUPER ADMIN
+    else if (currentUser.role === 'superadmin') {
+        roleIcon.setAttribute('data-feather', 'server');
+        roleTitle.innerText = 'Super Admin';
+        buatTombolMenu('verifikasi', 'Pantau Semua Data', 'eye');
+        buatTombolMenu('superadmin', 'Pengaturan Sistem', 'settings');
+        bukaModul('verifikasi');
+    }
+
+    feather.replace(); // Refresh icon
+    renderTabelData(); // Muat data tabel
+}
+
+function buatTombolMenu(idModul, teks, ikon) {
+    const btn = document.createElement('button');
+    btn.onclick = () => bukaModul(idModul);
+    btn.className = "modul-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition bg-white text-slate-600 border border-slate-200 hover:bg-slate-100";
+    btn.id = 'btn-modul-' + idModul;
+    btn.innerHTML = `<i data-feather="${ikon}" class="w-4 h-4"></i> ${teks}`;
+    document.getElementById('menuContainer').appendChild(btn);
+}
+
+// =====================================
+// 4. NAVIGASI ANTAR MODUL
+// =====================================
+function bukaModul(idModul) {
+    // Sembunyikan semua modul
+    daftarModul.forEach(m => {
+        let el = document.getElementById('modul-' + m);
+        let btn = document.getElementById('btn-modul-' + m);
+        if(el) el.classList.add('hidden');
+        if(btn) btn.className = "modul-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition bg-white text-slate-600 border border-slate-200 hover:bg-slate-100";
     });
 
-    let activeContent = document.getElementById('content-' + tabName);
-    let activeBtn = document.getElementById('tab-' + tabName);
+    // Tampilkan modul yang dipilih
+    let activeEl = document.getElementById('modul-' + idModul);
+    let activeBtn = document.getElementById('btn-modul-' + idModul);
     
-    if(activeContent) activeContent.classList.remove('hidden');
+    if(activeEl) activeEl.classList.remove('hidden');
     if(activeBtn) {
-        if (tabName === 'superadmin') {
-            activeBtn.className = "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition bg-slate-800 text-white shadow";
+        if(idModul === 'superadmin') {
+            activeBtn.className = "modul-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition bg-slate-800 text-white shadow";
         } else {
-            activeBtn.className = "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition bg-emerald-600 text-white shadow";
+            activeBtn.className = "modul-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition bg-emerald-600 text-white shadow";
         }
     }
 }
 
-// FUNGSI PERUBAHAN PERAN (WARGA / RT / SUPER ADMIN)
-function setRole(role) {
-    currentRole = role;
+// =====================================
+// 5. FITUR: RT UPLOAD DATA
+// =====================================
+function uploadDataRT(e) {
+    e.preventDefault();
+    const judul = document.getElementById('inputJudul').value;
+    const fileInput = document.getElementById('inputFoto');
+    const namaFile = fileInput.files.length > 0 ? fileInput.files[0].name : 'Tidak_ada_file';
+
+    const tanggalHariIni = new Date().toISOString().split('T')[0];
+
+    dataUploadRT.unshift({
+        id: Date.now(),
+        tanggal: tanggalHariIni,
+        judul: judul,
+        file: namaFile,
+        status: 'Menunggu'
+    });
+
+    document.getElementById('inputJudul').value = '';
+    fileInput.value = '';
     
-    const btnWarga = document.getElementById('btnRoleWarga');
-    const btnRT = document.getElementById('btnRoleRT');
-    const btnSuper = document.getElementById('btnRoleSuper');
-    const roleDisplay = document.getElementById('roleDisplay');
-    const tabSuper = document.getElementById('tab-superadmin');
-
-    // Reset warna tombol
-    btnWarga.className = "px-3 py-1 text-sm font-semibold rounded-md transition text-white hover:bg-emerald-700";
-    btnRT.className = "px-3 py-1 text-sm font-semibold rounded-md transition text-white hover:bg-emerald-700";
-    btnSuper.className = "px-3 py-1 text-sm font-semibold rounded-md transition text-white hover:bg-emerald-700";
-    tabSuper.classList.add('hidden');
-
-    if (role === 'warga') {
-        btnWarga.classList.add('bg-white', 'text-emerald-800', 'shadow');
-        btnWarga.classList.remove('text-white');
-        roleDisplay.innerHTML = `<i data-feather="user-check" class="text-emerald-600"></i> Warga Lingkungan`;
-        document.getElementById('formPengajuanWarga').style.display = 'block';
-        if(currentTab === 'superadmin') setTab('administrasi');
-        
-    } else if (role === 'rt') {
-        btnRT.classList.add('bg-amber-400', 'text-slate-900', 'shadow');
-        btnRT.classList.remove('text-white');
-        roleDisplay.innerHTML = `<i data-feather="shield" class="text-emerald-600"></i> Ketua RT (Admin)`;
-        document.getElementById('formPengajuanWarga').style.display = 'none';
-        if(currentTab === 'superadmin') setTab('administrasi');
-
-    } else if (role === 'superadmin') {
-        btnSuper.classList.add('bg-slate-900', 'text-emerald-400', 'shadow');
-        btnSuper.classList.remove('text-white');
-        roleDisplay.innerHTML = `<i data-feather="terminal" class="text-slate-800"></i> Super Admin`;
-        document.getElementById('formPengajuanWarga').style.display = 'none';
-        tabSuper.classList.remove('hidden'); // Munculkan menu modul sistem
-        tabSuper.classList.add('flex');
-    }
-    
-    feather.replace(); 
-    renderSurat(); 
+    alert("Data berhasil dikirim ke Admin untuk diverifikasi!");
+    bukaModul('verifikasi'); // Langsung pindah ke tab riwayat
+    renderTabelData();
 }
 
-// FUNGSI RENDER TABEL & DOKUMEN
-function renderSurat() {
-    const tbody = document.getElementById('tabelSurat');
-    tbody.innerHTML = ''; 
-    
-    const thAksi = document.querySelectorAll('.aksi-rt');
-    // Kolom aksi muncul jika role adalah RT atau Super Admin
-    thAksi.forEach(th => (currentRole === 'rt' || currentRole === 'superadmin') ? th.classList.remove('hidden') : th.classList.add('hidden'));
+// =====================================
+// 6. FITUR: ADMIN VERIFIKASI DATA
+// =====================================
+function renderTabelData() {
+    const tbody = document.getElementById('tabelDataRT');
+    tbody.innerHTML = '';
 
-    suratData.forEach(surat => {
-        let badgeColor = surat.status === 'Diterima' ? 'bg-emerald-100 text-emerald-700' : 
-                         surat.status === 'Ditolak' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700';
-        
+    // Kolom aksi hanya muncul jika yang login adalah ADMIN
+    const kolomAksi = document.getElementById('kolomAksi');
+    if (currentUser.role === 'admin') {
+        kolomAksi.classList.remove('hidden');
+    } else {
+        kolomAksi.classList.add('hidden');
+    }
+
+    dataUploadRT.forEach(data => {
+        let badgeStyle = data.status === 'Benar' ? 'bg-emerald-100 text-emerald-700' :
+                         data.status === 'Tidak Lengkap' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700';
+
         let tr = document.createElement('tr');
         tr.className = "hover:bg-slate-50";
-        
-        let htmlContent = `
-            <td class="py-3 px-3 font-medium text-slate-700">${surat.nama}</td>
-            <td class="py-3 px-3">${surat.jenis}</td>
+
+        let isiHtml = `
+            <td class="py-3 px-3 text-slate-500">${data.tanggal}</td>
+            <td class="py-3 px-3 font-semibold text-slate-700">${data.judul}</td>
             <td class="py-3 px-3">
-                <span class="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs border border-slate-200">
-                    <i data-feather="paperclip" class="w-3 h-3"></i> ${surat.dokumen}
+                <span class="inline-flex items-center gap-1 text-xs bg-slate-100 px-2 py-1 rounded border border-slate-200">
+                    <i data-feather="image" class="w-3 h-3"></i> ${data.file}
                 </span>
             </td>
-            <td class="py-3 px-3"><span class="px-2 py-1 rounded text-xs font-semibold ${badgeColor}">${surat.status}</span></td>
+            <td class="py-3 px-3">
+                <span class="px-2 py-1 rounded text-xs font-bold ${badgeStyle}">${data.status}</span>
+            </td>
         `;
 
-        if (currentRole === 'rt' || currentRole === 'superadmin') {
-            if (surat.status === 'Menunggu') {
-                htmlContent += `
-                    <td class="py-3 px-3 text-center space-x-1">
-                        <button onclick="lihatDokumen('${surat.dokumen}')" class="px-2 py-1 bg-blue-50 text-blue-600 border border-blue-200 rounded text-xs hover:bg-blue-100 transition">Cek Berkas</button>
-                        <button onclick="updateStatus(${surat.id}, 'Diterima')" class="px-2 py-1 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded text-xs hover:bg-emerald-100 transition">Terima</button>
-                        <button onclick="updateStatus(${surat.id}, 'Ditolak')" class="px-2 py-1 bg-rose-50 text-rose-600 border border-rose-200 rounded text-xs hover:bg-rose-100 transition">Tolak</button>
-                    </td>`;
+        // Tampilkan tombol Terima/Tolak hanya untuk ADMIN
+        if (currentUser.role === 'admin') {
+            if (data.status === 'Menunggu') {
+                isiHtml += `
+                <td class="py-3 px-3 text-center space-x-1">
+                    <button onclick="ubahStatusData(${data.id}, 'Benar')" class="px-2 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-xs hover:bg-emerald-100">Data Benar</button>
+                    <button onclick="ubahStatusData(${data.id}, 'Tidak Lengkap')" class="px-2 py-1 bg-rose-50 text-rose-700 border border-rose-200 rounded text-xs hover:bg-rose-100">Tidak Lengkap</button>
+                </td>`;
             } else {
-                htmlContent += `
-                    <td class="py-3 px-3 text-center space-x-1">
-                        <button onclick="lihatDokumen('${surat.dokumen}')" class="px-2 py-1 bg-blue-50 text-blue-600 border border-blue-200 rounded text-xs hover:bg-blue-100 transition">Cek Berkas</button>
-                    </td>`;
+                isiHtml += `<td class="py-3 px-3 text-center text-xs text-slate-400">Sudah Dicek</td>`;
             }
         }
 
-        tr.innerHTML = htmlContent;
+        tr.innerHTML = isiHtml;
         tbody.appendChild(tr);
     });
     feather.replace();
 }
 
-// FUNGSI CEK DOKUMEN (Admin / RT)
-function lihatDokumen(namaFile) {
-    alert("Membuka dokumen: " + namaFile + "\n\n(Catatan: Karena ini simulasi tanpa database, dokumen tidak benar-benar terbuka, namun logika sistem sudah siap untuk dikembangkan).");
-}
-
-// FUNGSI UPLOAD SURAT (Warga)
-function ajukanSurat(e) {
-    e.preventDefault(); 
-    
-    const nama = document.getElementById('inputNamaSurat').value;
-    const jenis = document.getElementById('inputJenisSurat').value;
-    const fileInput = document.getElementById('inputDokumen');
-    
-    // Mengambil nama file yang diupload (simulasi)
-    let namaFile = fileInput.files.length > 0 ? fileInput.files[0].name : 'Tanpa_Dokumen.pdf';
-    
-    suratData.unshift({
-        id: Date.now(),
-        nama: nama,
-        jenis: jenis,
-        dokumen: namaFile,
-        status: 'Menunggu'
-    });
-    
-    document.getElementById('inputNamaSurat').value = ''; 
-    fileInput.value = '';
-    renderSurat(); 
-}
-
-function updateStatus(id, newStatus) {
-    const index = suratData.findIndex(s => s.id === id);
+function ubahStatusData(id, statusBaru) {
+    const index = dataUploadRT.findIndex(d => d.id === id);
     if (index !== -1) {
-        suratData[index].status = newStatus;
-        renderSurat();
+        dataUploadRT[index].status = statusBaru;
+        renderTabelData(); // Refresh tabel
     }
 }
 
-// FUNGSI SUPER ADMIN: TAMBAH MODUL DINAMIS
+// =====================================
+// 7. FITUR: SUPER ADMIN TAMBAH MODUL
+// =====================================
 function tambahModulBaru(e) {
     e.preventDefault();
     const namaModul = document.getElementById('inputNamaModul').value;
-    const idModul = 'modul-' + Date.now(); // Buat ID unik
+    const idModulBaru = 'modul-' + Date.now();
     
-    // 1. Tambahkan ID ke daftar modul
-    daftarModul.push(idModul);
-    
-    // 2. Buat tombol di sidebar
-    const sidebar = document.getElementById('sidebarMenu');
-    const btnBaru = document.createElement('button');
-    btnBaru.id = `tab-${idModul}`;
-    btnBaru.onclick = () => setTab(idModul);
-    btnBaru.className = "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 mt-1";
-    btnBaru.innerHTML = `<i data-feather="box"></i> ${namaModul}`;
-    sidebar.appendChild(btnBaru);
-    
-    // 3. Buat konten kosong untuk modul baru
+    // Daftarkan modul ke memori
+    daftarModul.push(idModulBaru);
+
+    // Tambahkan tombol di menu samping
+    buatTombolMenu(idModulBaru, namaModul, 'box');
+
+    // Buat area konten (kosong)
     const mainContent = document.getElementById('mainContent');
     const divBaru = document.createElement('div');
-    divBaru.id = `content-${idModul}`;
+    divBaru.id = `modul-${idModulBaru}`;
     divBaru.className = "hidden space-y-6 animasi-muncul";
     divBaru.innerHTML = `
         <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
             <h3 class="text-lg font-bold mb-4">${namaModul}</h3>
-            <p class="text-sm text-slate-500">Ini adalah halaman modul baru yang ditambahkan oleh Super Admin. Anda bisa menambahkan fitur kustom di sini nantinya.</p>
+            <p class="text-sm text-slate-500">Ini adalah fitur baru yang ditambahkan oleh Super Admin.</p>
         </div>
     `;
     mainContent.appendChild(divBaru);
-    
-    alert(`Modul "${namaModul}" berhasil ditambahkan ke menu!`);
+
     document.getElementById('inputNamaModul').value = '';
+    alert(`Sukses! Fitur "${namaModul}" berhasil ditambahkan.`);
     feather.replace();
 }
-
-renderSurat();
-// Set warna awal untuk tab aktif
-setTab('administrasi');
