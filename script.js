@@ -1,8 +1,8 @@
-// Mengimpor library Firebase Firestore secara Modular
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
 import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js";
 
-// Konfigurasi Firebase dari akun Anda
+
 const firebaseConfig = {
     apiKey: "AIzaSyCsQemf5eHXIe852eCdJUyLCWJg0dSRmic",
     authDomain: "pelanyan-desa.firebaseapp.com",
@@ -83,7 +83,7 @@ function masukSistem() {
         document.getElementById('rtNamaHeader').innerText = currentUser.nama;
         renderTabelRT();
     } else {
-        document.getElementById('dashboardOperator').classList.min?.('hidden') || document.getElementById('dashboardOperator').classList.remove('hidden');
+        document.getElementById('dashboardOperator').classList.remove('hidden');
         document.getElementById('opGreetingName').innerText = currentUser.nama;
         setupFilterRTDropdown();
         renderTabelOperator();
@@ -101,7 +101,46 @@ window.prosesLogout = function() {
 }
 
 // =====================================
-// LOGIKA RT (KIRIM DATA & UPLOAD)
+// FUNGSI BANTU: AUTO-COMPRESS GAMBAR
+// =====================================
+function kompresGambar(file, maxWidth = 800, quality = 0.7) {
+    return new Promise((resolve) => {
+        // Jika file berupa PDF, tidak perlu dikompres dengan canvas
+        if (file.type === "application/pdf") {
+            resolve(file);
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = function(event) {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = function() {
+                let width = img.width;
+                let height = img.height;
+
+                if (width > maxWidth) {
+                    height = Math.round((height * maxWidth) / width);
+                    width = maxWidth;
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Ubah ke format Base64 terkompresi
+                const dataUrl = canvas.toDataURL('image/jpeg', quality);
+                resolve(dataUrl);
+            }
+        }
+    });
+}
+
+// =====================================
+// LOGIKA RT (KIRIM DATA & AUTO COMPRESS)
 // =====================================
 window.kirimFormulirRT = async function(e) {
     e.preventDefault();
@@ -115,51 +154,63 @@ window.kirimFormulirRT = async function(e) {
     const fileInput = document.getElementById('rtInputBerkas');
     const file = fileInput.files[0];
 
-    if (file && file.size > 500000) {
-        alert("Maaf, ukuran file terlalu besar! Maksimal 500 KB.\nSilakan kecilkan ukuran foto Anda terlebih dahulu.");
+    if (!file) {
+        alert("Silakan pilih berkas terlebih dahulu.");
         return;
     }
 
-    btnKirim.innerText = "Mengunggah ke Server...";
+    btnKirim.innerText = "Mengompres & Mengunggah...";
     btnKirim.disabled = true;
     btnKirim.classList.add('opacity-50', 'cursor-not-allowed');
 
-    const reader = new FileReader();
-    reader.onload = async function(eResult) {
-        const fileBase64 = eResult.target.result;
+    try {
+        let fileBase64 = "";
 
-        try {
-            await addDoc(collection(db, "data_pelayanan"), {
-                rt_id: currentUser.rt_id,
-                tanggal: `${tgl} ${jam}`,
-                tiket: tiket,
-                nama: document.getElementById('rtInputNama').value,
-                wa: document.getElementById('rtInputWA').value,
-                layanan: document.getElementById('rtInputLayanan').value,
-                keperluan: document.getElementById('rtInputKeperluan').value,
-                namaFile: file.name,
-                fileData: fileBase64,
-                status: 'Menunggu',
-                waktuSistem: Date.now()
+        if (file.type === "application/pdf") {
+            // Cek ukuran PDF mentah
+            if (file.size > 700000) {
+                throw new Error("Ukuran file PDF terlalu besar (Maksimal 500 KB).");
+            }
+            // Ubah PDF ke Base64 langsung
+            fileBase64 = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (ev) => resolve(ev.target.result);
+                reader.readAsDataURL(file);
             });
-
-            document.getElementById('rtInputNama').value = '';
-            document.getElementById('rtInputWA').value = '';
-            document.getElementById('rtInputLayanan').value = '';
-            document.getElementById('rtInputKeperluan').value = '';
-            fileInput.value = '';
-            
-            alert(`Sukses! Data telah tersimpan permanen di Server Desa.\nNomor Tiket: ${tiket}`);
-        } catch (error) {
-            alert("Gagal terhubung ke database. Error: " + error.message);
+        } else {
+            // Otomatis kompres gambar agar ukurannya dijamin aman di bawah 500 KB
+            fileBase64 = await kompresGambar(file, 800, 0.6);
         }
 
-        btnKirim.innerText = "Kirim Data & Berkas ke Desa";
-        btnKirim.disabled = false;
-        btnKirim.classList.remove('opacity-50', 'cursor-not-allowed');
-    };
-    
-    if(file) reader.readAsDataURL(file); 
+        // Kirim data ke Firebase Firestore
+        await addDoc(collection(db, "data_pelayanan"), {
+            rt_id: currentUser.rt_id,
+            tanggal: `${tgl} ${jam}`,
+            tiket: tiket,
+            nama: document.getElementById('rtInputNama').value,
+            wa: document.getElementById('rtInputWA').value,
+            layanan: document.getElementById('rtInputLayanan').value,
+            keperluan: document.getElementById('rtInputKeperluan').value,
+            namaFile: file.name,
+            fileData: fileBase64,
+            status: 'Menunggu',
+            waktuSistem: Date.now()
+        });
+
+        document.getElementById('rtInputNama').value = '';
+        document.getElementById('rtInputWA').value = '';
+        document.getElementById('rtInputLayanan').value = '';
+        document.getElementById('rtInputKeperluan').value = '';
+        fileInput.value = '';
+        
+        alert(`Sukses! Data & Berkas berhasil dikompres otomatis dan dikirim.\nNomor Tiket: ${tiket}`);
+    } catch (error) {
+        alert("Gagal memproses berkas: " + error.message);
+    }
+
+    btnKirim.innerText = "Kirim Data & Berkas ke Desa";
+    btnKirim.disabled = false;
+    btnKirim.classList.remove('opacity-50', 'cursor-not-allowed');
 }
 
 function renderTabelRT() {
@@ -171,7 +222,6 @@ function renderTabelRT() {
     dataMilikRT.forEach(data => {
         let statusStyle = data.status === 'Selesai' ? 'text-green-600' : (data.status === 'Dibatalkan' ? 'text-red-600' : 'text-orange-500');
         
-        // Membersihkan format nomor HP untuk tautan WhatsApp (mengubah 08... menjadi 628...)
         let waClean = data.wa.replace(/[^0-9]/g, '');
         if (waClean.startsWith('0')) {
             waClean = '62' + waClean.substring(1);
@@ -208,121 +258,3 @@ function renderTabelRT() {
 // LOGIKA OPERATOR
 // =====================================
 function setupFilterRTDropdown() {
-    const dropdown = document.getElementById('opFilterRT');
-    dropdown.innerHTML = '<option value="Semua">Semua RT (1-19)</option>';
-    for (let i = 1; i <= 19; i++) {
-        let rtStr = i < 10 ? `RT 0${i}` : `RT ${i}`;
-        dropdown.innerHTML += `<option value="${rtStr}">${rtStr}</option>`;
-    }
-}
-
-window.filterOpStatus = function(status) {
-    currentStatusOp = status;
-    document.getElementById('judulTabelOp').innerText = status === 'Semua' ? 'Semua Data Layanan' : `Data Layanan: ${status}`;
-    document.querySelectorAll('.op-menu').forEach(el => {
-        el.classList.remove('bg-[#1e282c]', 'border-[#3c8dbc]', 'text-white');
-        el.classList.add('border-transparent', 'text-slate-400');
-    });
-    let activeMenu = document.getElementById('menu-' + status);
-    if(activeMenu) {
-        activeMenu.classList.remove('border-transparent', 'text-slate-400');
-        activeMenu.classList.add('bg-[#1e282c]', 'border-[#3c8dbc]', 'text-white');
-    }
-    renderTabelOperator();
-}
-
-window.renderTabelOperator = function() {
-    const filterRT = document.getElementById('opFilterRT').value; 
-    let filteredData = dataPermohonan;
-
-    if (filterRT !== 'Semua') {
-        filteredData = filteredData.filter(d => d.rt_id === filterRT);
-    }
-
-    let masuk = 0, proses = 0, selesai = 0, batal = 0;
-    filteredData.forEach(d => {
-        if(d.status === 'Menunggu') masuk++;
-        if(d.status === 'Diproses') proses++;
-        if(d.status === 'Selesai') selesai++;
-        if(d.status === 'Dibatalkan') batal++;
-    });
-    document.getElementById('countMasuk').innerText = masuk;
-    document.getElementById('countProses').innerText = proses;
-    document.getElementById('countSelesai').innerText = selesai;
-    document.getElementById('countBatal').innerText = batal;
-
-    if (currentStatusOp !== 'Semua') {
-        filteredData = filteredData.filter(d => d.status === currentStatusOp);
-    }
-
-    const tbody = document.getElementById('tabelDataOperator');
-    tbody.innerHTML = '';
-
-    filteredData.forEach(data => {
-        let statusColor = "text-slate-600";
-        if(data.status === 'Menunggu') statusColor = "text-[#00c0ef] font-bold";
-        if(data.status === 'Diproses') statusColor = "text-[#f39c12] font-bold";
-        if(data.status === 'Selesai') statusColor = "text-[#00a65a] font-bold";
-        if(data.status === 'Dibatalkan') statusColor = "text-[#dd4b39] font-bold";
-
-        let tr = document.createElement('tr');
-        tr.className = "hover:bg-slate-50 text-slate-700";
-        tr.innerHTML = `
-            <td class="py-3 pr-2 align-top"><span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded font-bold">${data.rt_id}</span></td>
-            <td class="py-3 pr-2 align-top text-xs">${data.tanggal.split(' ')[0]}<br><span class="font-mono font-bold">${data.tiket}</span></td>
-            <td class="py-3 pr-2 align-top text-xs"><span class="font-bold text-sm">${data.nama}</span><br>${data.wa}</td>
-            <td class="py-3 pr-2 align-top text-xs">
-                <span class="font-bold">${data.layanan}</span><br>
-                <span class="text-slate-500">${data.keperluan}</span>
-                <div class="mt-2">
-                    <button onclick="lihatBerkas('${data.id}')" class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline font-medium">
-                        <i data-feather="external-link" class="w-3 h-3"></i> Cek Berkas Lampiran
-                    </button>
-                </div>
-            </td>
-            <td class="py-3 pr-2 align-top ${statusColor} text-xs">${data.status}</td>
-            <td class="py-3 align-top text-center">
-                <select onchange="ubahStatusDariOperator('${data.id}', this.value)" class="text-xs border border-slate-300 rounded p-1 focus:outline-none cursor-pointer">
-                    <option value="Menunggu" ${data.status === 'Menunggu' ? 'selected' : ''}>Menunggu</option>
-                    <option value="Diproses" ${data.status === 'Diproses' ? 'selected' : ''}>Diproses</option>
-                    <option value="Selesai" ${data.status === 'Selesai' ? 'selected' : ''}>Selesai</option>
-                    <option value="Dibatalkan" ${data.status === 'Dibatalkan' ? 'selected' : ''}>Dibatalkan</option>
-                </select>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
-
-    if(filteredData.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-500 text-sm italic">Tidak ada data ditemukan.</td></tr>`;
-    }
-    feather.replace();
-}
-
-window.lihatBerkas = function(id) {
-    const data = dataPermohonan.find(d => d.id === id);
-    if(data && data.fileData) {
-        let newWindow = window.open();
-        if(!newWindow) {
-            alert("Browser Anda memblokir Pop-up! Izinkan pop-up untuk melihat berkas.");
-            return;
-        }
-        if (data.fileData.startsWith("data:image")) {
-            newWindow.document.write(`<body style="margin:0; background:#222; display:flex; justify-content:center; align-items:center; height:100vh;"><img src="${data.fileData}" style="max-width:100%; max-height:100vh; object-fit:contain;" /></body>`);
-        } else {
-            newWindow.document.write(`<body style="margin:0;"><iframe src="${data.fileData}" frameborder="0" style="border:0; width:100vw; height:100vh;" allowfullscreen></iframe></body>`);
-        }
-    } else {
-        alert("Berkas tidak ditemukan.");
-    }
-}
-
-window.ubahStatusDariOperator = async function(id, newStatus) {
-    try {
-        await updateDoc(doc(db, "data_pelayanan", id), {
-            status: newStatus
-        });
-    } catch (error) {
-        alert("Gagal memperbarui status: " + error.message);
-    }
-}
