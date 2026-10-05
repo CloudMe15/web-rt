@@ -1,24 +1,48 @@
 feather.replace();
 
 // =====================================
-// 1. DATABASE SIMULASI
+// 1. DATABASE & STATE SIMULASI
 // =====================================
 const databaseAkun = {
-    'rt': { password: '123', role: 'rt', nama: 'Bapak Ketua RT' },
-    'admin': { password: '123', role: 'admin', nama: 'Admin Verifikator' },
-    'super': { password: '123', role: 'superadmin', nama: 'Super Admin Pusat' }
+    'rt': { password: '123', role: 'rt', nama: 'Bapak RT 04' },
+    'admin': { password: '123', role: 'admin', nama: 'Admin Kecamatan' },
+    'super': { password: '123', role: 'superadmin', nama: 'Super Admin Sistem' }
 };
 
-let dataUploadRT = [
-    { id: 1, tanggal: '2026-10-05', judul: 'Foto Kegiatan Posyandu', file: 'posyandu.jpg', status: 'Menunggu' },
-    { id: 2, tanggal: '2026-10-04', judul: 'Laporan Kas Warga', file: 'laporan_kas.pdf', status: 'Benar' }
+// Kategori standar tugas RT
+let kategoriModul = [
+    'Pelayanan Administrasi (KTP/KK)', 
+    'Pendataan Kependudukan', 
+    'Keamanan & Ketertiban (Siskamling)', 
+    'Fasilitator Sosial (Kerja Bakti)', 
+    'Penghubung Informasi'
 ];
 
-let currentUser = null; // Menyimpan status siapa yang sedang login
-let daftarModul = ['upload', 'verifikasi', 'superadmin'];
+let dataLaporan = [
+    { 
+        id: 1, 
+        tanggal: '2026-10-04', 
+        kategori: 'Keamanan & Ketertiban (Siskamling)', 
+        judul: 'Jadwal Ronda Minggu Pertama', 
+        file: 'jadwal_ronda.pdf', 
+        status: 'Data Valid',
+        catatan: 'Terima kasih, data sudah dicatat di kecamatan.'
+    },
+    { 
+        id: 2, 
+        tanggal: '2026-10-05', 
+        kategori: 'Pendataan Kependudukan', 
+        judul: 'Warga Pendatang Baru Blok B', 
+        file: 'ktp_pendatang.jpg', 
+        status: 'Menunggu',
+        catatan: ''
+    }
+];
+
+let currentUser = null; 
 
 // =====================================
-// 2. SISTEM LOGIN & LOGOUT
+// 2. SISTEM LOGIN
 // =====================================
 function prosesLogin(e) {
     e.preventDefault();
@@ -26,15 +50,13 @@ function prosesLogin(e) {
     const pass = document.getElementById('loginPassword').value;
 
     if (databaseAkun[user] && databaseAkun[user].password === pass) {
-        // Login Sukses
         currentUser = databaseAkun[user];
         document.getElementById('loginError').classList.add('hidden');
         document.getElementById('loginPage').style.display = 'none';
         document.getElementById('dashboardPage').style.display = 'block';
         
-        setupDashboard(); // Atur tampilan sesuai peran
+        setupDashboard(); 
     } else {
-        // Login Gagal
         document.getElementById('loginError').classList.remove('hidden');
     }
 }
@@ -48,43 +70,56 @@ function prosesLogout() {
 }
 
 // =====================================
-// 3. PENGATURAN DASHBOARD SESUAI PERAN
+// 3. PENGATURAN DASHBOARD & MENU
 // =====================================
 function setupDashboard() {
-    document.getElementById('userGreeting').innerText = 'Halo, ' + currentUser.nama;
+    document.getElementById('userGreeting').innerText = 'Akses: ' + currentUser.nama;
     
     const roleIcon = document.getElementById('roleIcon');
     const roleTitle = document.getElementById('roleTitle');
     const menuContainer = document.getElementById('menuContainer');
+    const kolomAksi = document.getElementById('kolomAksi');
+    const judulTabel = document.getElementById('judulTabel');
     
-    menuContainer.innerHTML = ''; // Kosongkan menu sebelumnya
+    menuContainer.innerHTML = ''; 
 
-    // A. JIKA LOGIN SEBAGAI RT
+    // PERAN: RT (Hanya bisa kirim dan lihat riwayat sendiri)
     if (currentUser.role === 'rt') {
-        roleIcon.setAttribute('data-feather', 'camera');
-        roleTitle.innerText = 'Ketua RT';
-        buatTombolMenu('upload', 'Upload Data', 'upload-cloud');
-        buatTombolMenu('verifikasi', 'Riwayat Data Saya', 'file-text');
+        roleIcon.setAttribute('data-feather', 'user-check');
+        roleTitle.innerText = 'Pengurus RT';
+        judulTabel.innerText = 'Riwayat Laporan Saya';
+        kolomAksi.classList.add('hidden'); // RT tidak verifikasi
+
+        buatTombolMenu('upload', 'Buat Laporan Baru', 'edit');
+        buatTombolMenu('tabel', 'Status Laporan', 'file-text');
+        
+        perbaruiDropdownKategori();
         bukaModul('upload');
     } 
-    // B. JIKA LOGIN SEBAGAI ADMIN VERIFIKATOR
+    // PERAN: ADMIN KECAMATAN (Mengecek dan Verifikasi)
     else if (currentUser.role === 'admin') {
         roleIcon.setAttribute('data-feather', 'check-circle');
-        roleTitle.innerText = 'Admin Verifikasi';
-        buatTombolMenu('verifikasi', 'Verifikasi Data RT', 'check-square');
-        bukaModul('verifikasi');
+        roleTitle.innerText = 'Admin Kecamatan';
+        judulTabel.innerText = 'Verifikasi Laporan RT Masuk';
+        kolomAksi.classList.remove('hidden'); // Admin bisa verifikasi
+
+        buatTombolMenu('tabel', 'Antrean Verifikasi', 'inbox');
+        bukaModul('tabel');
     }
-    // C. JIKA LOGIN SEBAGAI SUPER ADMIN
+    // PERAN: SUPER ADMIN (Memantau semua & Tambah Modul)
     else if (currentUser.role === 'superadmin') {
         roleIcon.setAttribute('data-feather', 'server');
         roleTitle.innerText = 'Super Admin';
-        buatTombolMenu('verifikasi', 'Pantau Semua Data', 'eye');
-        buatTombolMenu('superadmin', 'Pengaturan Sistem', 'settings');
-        bukaModul('verifikasi');
+        judulTabel.innerText = 'Pantauan Semua Laporan RT';
+        kolomAksi.classList.add('hidden'); // Super admin hanya mantau tabel, tidak verifikasi tugas kecamatan
+
+        buatTombolMenu('tabel', 'Master Data Laporan', 'database');
+        buatTombolMenu('superadmin', 'Pengaturan Modul', 'settings');
+        bukaModul('tabel');
     }
 
-    feather.replace(); // Refresh icon
-    renderTabelData(); // Muat data tabel
+    feather.replace(); 
+    renderTabel(); 
 }
 
 function buatTombolMenu(idModul, teks, ikon) {
@@ -96,19 +131,16 @@ function buatTombolMenu(idModul, teks, ikon) {
     document.getElementById('menuContainer').appendChild(btn);
 }
 
-// =====================================
-// 4. NAVIGASI ANTAR MODUL
-// =====================================
 function bukaModul(idModul) {
-    // Sembunyikan semua modul
-    daftarModul.forEach(m => {
+    const semuaModul = ['upload', 'tabel', 'superadmin'];
+    
+    semuaModul.forEach(m => {
         let el = document.getElementById('modul-' + m);
         let btn = document.getElementById('btn-modul-' + m);
         if(el) el.classList.add('hidden');
         if(btn) btn.className = "modul-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition bg-white text-slate-600 border border-slate-200 hover:bg-slate-100";
     });
 
-    // Tampilkan modul yang dipilih
     let activeEl = document.getElementById('modul-' + idModul);
     let activeBtn = document.getElementById('btn-modul-' + idModul);
     
@@ -123,122 +155,126 @@ function bukaModul(idModul) {
 }
 
 // =====================================
-// 5. FITUR: RT UPLOAD DATA
+// 4. LOGIKA RT: UPLOAD & KATEGORI DINAMIS
 // =====================================
-function uploadDataRT(e) {
+function perbaruiDropdownKategori() {
+    const dropdown = document.getElementById('inputKategori');
+    if(dropdown) {
+        dropdown.innerHTML = '<option value="">-- Pilih Kategori Laporan --</option>';
+        kategoriModul.forEach(kat => {
+            dropdown.innerHTML += `<option value="${kat}">${kat}</option>`;
+        });
+    }
+}
+
+function kirimLaporan(e) {
     e.preventDefault();
+    const kategori = document.getElementById('inputKategori').value;
     const judul = document.getElementById('inputJudul').value;
-    const fileInput = document.getElementById('inputFoto');
+    const fileInput = document.getElementById('inputDokumen');
     const namaFile = fileInput.files.length > 0 ? fileInput.files[0].name : 'Tidak_ada_file';
 
-    const tanggalHariIni = new Date().toISOString().split('T')[0];
+    const tgl = new Date().toISOString().split('T')[0];
 
-    dataUploadRT.unshift({
+    dataLaporan.unshift({
         id: Date.now(),
-        tanggal: tanggalHariIni,
+        tanggal: tgl,
+        kategori: kategori,
         judul: judul,
         file: namaFile,
-        status: 'Menunggu'
+        status: 'Menunggu',
+        catatan: ''
     });
 
     document.getElementById('inputJudul').value = '';
+    document.getElementById('inputKategori').value = '';
     fileInput.value = '';
     
-    alert("Data berhasil dikirim ke Admin untuk diverifikasi!");
-    bukaModul('verifikasi'); // Langsung pindah ke tab riwayat
-    renderTabelData();
+    alert("Laporan berhasil dikirim ke Kantor Kecamatan!");
+    bukaModul('tabel'); 
+    renderTabel();
 }
 
 // =====================================
-// 6. FITUR: ADMIN VERIFIKASI DATA
+// 5. LOGIKA RENDER TABEL & VERIFIKASI ADMIN
 // =====================================
-function renderTabelData() {
-    const tbody = document.getElementById('tabelDataRT');
+function renderTabel() {
+    const tbody = document.getElementById('tbodyLaporan');
     tbody.innerHTML = '';
 
-    // Kolom aksi hanya muncul jika yang login adalah ADMIN
-    const kolomAksi = document.getElementById('kolomAksi');
-    if (currentUser.role === 'admin') {
-        kolomAksi.classList.remove('hidden');
-    } else {
-        kolomAksi.classList.add('hidden');
-    }
-
-    dataUploadRT.forEach(data => {
-        let badgeStyle = data.status === 'Benar' ? 'bg-emerald-100 text-emerald-700' :
+    dataLaporan.forEach(data => {
+        let badgeStyle = data.status === 'Data Valid' ? 'bg-emerald-100 text-emerald-700' :
                          data.status === 'Tidak Lengkap' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700';
 
         let tr = document.createElement('tr');
         tr.className = "hover:bg-slate-50";
 
-        let isiHtml = `
-            <td class="py-3 px-3 text-slate-500">${data.tanggal}</td>
-            <td class="py-3 px-3 font-semibold text-slate-700">${data.judul}</td>
+        let html = `
+            <td class="py-3 px-3 text-slate-500 whitespace-nowrap">${data.tanggal}</td>
             <td class="py-3 px-3">
-                <span class="inline-flex items-center gap-1 text-xs bg-slate-100 px-2 py-1 rounded border border-slate-200">
-                    <i data-feather="image" class="w-3 h-3"></i> ${data.file}
-                </span>
+                <span class="block text-xs font-bold text-emerald-600 mb-0.5">${data.kategori}</span>
+                <span class="font-medium text-slate-800">${data.judul}</span>
+            </td>
+            <td class="py-3 px-3">
+                <button onclick="lihatBerkas('${data.file}')" class="inline-flex items-center gap-1 text-xs bg-white hover:bg-slate-100 px-2 py-1.5 rounded border border-slate-300 transition">
+                    <i data-feather="download" class="w-3 h-3 text-slate-600"></i> ${data.file}
+                </button>
             </td>
             <td class="py-3 px-3">
                 <span class="px-2 py-1 rounded text-xs font-bold ${badgeStyle}">${data.status}</span>
+                ${data.catatan ? `<p class="text-xs text-slate-500 mt-1 italic">"${data.catatan}"</p>` : ''}
             </td>
         `;
 
-        // Tampilkan tombol Terima/Tolak hanya untuk ADMIN
+        // Tampilkan tombol Verifikasi HANYA jika perannya ADMIN
         if (currentUser.role === 'admin') {
             if (data.status === 'Menunggu') {
-                isiHtml += `
-                <td class="py-3 px-3 text-center space-x-1">
-                    <button onclick="ubahStatusData(${data.id}, 'Benar')" class="px-2 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-xs hover:bg-emerald-100">Data Benar</button>
-                    <button onclick="ubahStatusData(${data.id}, 'Tidak Lengkap')" class="px-2 py-1 bg-rose-50 text-rose-700 border border-rose-200 rounded text-xs hover:bg-rose-100">Tidak Lengkap</button>
+                html += `
+                <td class="py-3 px-3 text-center">
+                    <div class="flex flex-col gap-1">
+                        <button onclick="verifikasiLaporan(${data.id}, 'Data Valid')" class="px-2 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-xs hover:bg-emerald-100 font-bold">Valid</button>
+                        <button onclick="verifikasiLaporan(${data.id}, 'Tidak Lengkap')" class="px-2 py-1.5 bg-rose-50 text-rose-700 border border-rose-200 rounded text-xs hover:bg-rose-100 font-bold">Tolak</button>
+                    </div>
                 </td>`;
             } else {
-                isiHtml += `<td class="py-3 px-3 text-center text-xs text-slate-400">Sudah Dicek</td>`;
+                html += `<td class="py-3 px-3 text-center text-xs text-slate-400 font-medium">Telah Diproses</td>`;
             }
         }
 
-        tr.innerHTML = isiHtml;
+        tr.innerHTML = html;
         tbody.appendChild(tr);
     });
     feather.replace();
 }
 
-function ubahStatusData(id, statusBaru) {
-    const index = dataUploadRT.findIndex(d => d.id === id);
+function lihatBerkas(nama) {
+    alert("Membuka file bukti: " + nama);
+}
+
+function verifikasiLaporan(id, statusBaru) {
+    const index = dataLaporan.findIndex(d => d.id === id);
     if (index !== -1) {
-        dataUploadRT[index].status = statusBaru;
-        renderTabelData(); // Refresh tabel
+        // Minta Admin memasukkan catatan/alasan
+        let catatanAdmin = prompt(`Masukkan catatan untuk RT (Opsional).\nStatus baru: ${statusBaru}`);
+        
+        if (catatanAdmin !== null) { // Jika tidak di-cancel
+            dataLaporan[index].status = statusBaru;
+            dataLaporan[index].catatan = catatanAdmin;
+            renderTabel(); 
+        }
     }
 }
 
 // =====================================
-// 7. FITUR: SUPER ADMIN TAMBAH MODUL
+// 6. LOGIKA SUPER ADMIN: TAMBAH KATEGORI
 // =====================================
-function tambahModulBaru(e) {
+function tambahKategori(e) {
     e.preventDefault();
-    const namaModul = document.getElementById('inputNamaModul').value;
-    const idModulBaru = 'modul-' + Date.now();
+    const kategoriBaru = document.getElementById('inputKategoriBaru').value;
     
-    // Daftarkan modul ke memori
-    daftarModul.push(idModulBaru);
-
-    // Tambahkan tombol di menu samping
-    buatTombolMenu(idModulBaru, namaModul, 'box');
-
-    // Buat area konten (kosong)
-    const mainContent = document.getElementById('mainContent');
-    const divBaru = document.createElement('div');
-    divBaru.id = `modul-${idModulBaru}`;
-    divBaru.className = "hidden space-y-6 animasi-muncul";
-    divBaru.innerHTML = `
-        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-            <h3 class="text-lg font-bold mb-4">${namaModul}</h3>
-            <p class="text-sm text-slate-500">Ini adalah fitur baru yang ditambahkan oleh Super Admin.</p>
-        </div>
-    `;
-    mainContent.appendChild(divBaru);
-
-    document.getElementById('inputNamaModul').value = '';
-    alert(`Sukses! Fitur "${namaModul}" berhasil ditambahkan.`);
-    feather.replace();
+    // Tambahkan ke array memori
+    kategoriModul.push(kategoriBaru);
+    
+    document.getElementById('inputKategoriBaru').value = '';
+    alert(`Modul pelaporan "${kategoriBaru}" berhasil ditambahkan ke dalam sistem! RT sekarang dapat menggunakannya.`);
 }
