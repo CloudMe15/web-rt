@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal Sistem Terpadu</title>
+    <title>E-Lapor RT | Terhubung ke Kecamatan</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/feather-icons"></script>
     <link rel="stylesheet" href="style.css">
@@ -14,9 +14,11 @@
     <div id="loginPage" class="flex items-center justify-center min-h-screen bg-slate-800">
         <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
             <div class="text-center mb-6">
-                <i data-feather="lock" class="w-12 h-12 text-emerald-600 mx-auto mb-2"></i>
-                <h2 class="text-2xl font-bold text-slate-800">Portal Login</h2>
-                <p class="text-sm text-slate-500">Silakan masuk menggunakan akun Anda</p>
+                <div class="inline-block p-4 bg-emerald-100 text-emerald-600 rounded-full mb-3">
+                    <i data-feather="monitor" class="w-10 h-10"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-800">E-Lapor RT</h2>
+                <p class="text-sm text-slate-500">Sistem Pelaporan RT ke Kantor Kecamatan</p>
             </div>
             
             <form onsubmit="prosesLogin(event)" class="space-y-4">
@@ -31,14 +33,14 @@
                 <div id="loginError" class="hidden text-rose-600 text-sm font-semibold text-center bg-rose-50 p-2 rounded">
                     Username atau Password salah!
                 </div>
-                <button type="submit" class="w-full bg-emerald-600 text-white font-bold py-2 rounded-lg hover:bg-emerald-700 transition">Masuk</button>
+                <button type="submit" class="w-full bg-emerald-600 text-white font-bold py-2 rounded-lg hover:bg-emerald-700 transition">Masuk Sistem</button>
             </form>
             
-            <div class="mt-6 p-4 bg-slate-50 rounded-lg text-xs text-slate-600">
-                <strong>Akun Uji Coba:</strong><br>
-                1. RT &rarr; User: <b>rt</b> | Pass: <b>123</b><br>
-                2. Admin &rarr; User: <b>admin</b> | Pass: <b>123</b><br>
-                3. Super Admin &rarr; User: <b>super</b> | Pass: <b>123</b>
+            <div class="mt-6 p-4 bg-slate-50 rounded-lg text-xs text-slate-600 space-y-1">
+                <p><strong>Akses Uji Coba:</strong></p>
+                <p>1. RT (Pelapor) &rarr; User: <b>rt</b> | Pass: <b>123</b></p>
+                <p>2. Admin (Kecamatan) &rarr; User: <b>admin</b> | Pass: <b>123</b></p>
+                <p>3. Super Admin &rarr; User: <b>super</b> | Pass: <b>123</b></p>
             </div>
         </div>
     </div>
@@ -49,12 +51,15 @@
         <!-- Header -->
         <header class="bg-emerald-700 text-white shadow-md sticky top-0 z-50">
             <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-                <div class="flex items-center space-x-2">
+                <div class="flex items-center space-x-3">
                     <i data-feather="shield"></i>
-                    <h1 class="text-xl font-bold">Portal Terpadu</h1>
+                    <div>
+                        <h1 class="text-lg font-bold leading-tight">E-Lapor RT</h1>
+                        <p class="text-xs text-emerald-200">Terintegrasi dengan Kantor Kecamatan</p>
+                    </div>
                 </div>
                 <div class="flex items-center gap-4">
-                    <span id="userGreeting" class="text-sm font-medium">Halo, User</span>
+                    <span id="userGreeting" class="text-sm font-medium hidden md:block">Halo, User</span>
                     <button onclick="prosesLogout()" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 rounded-lg text-xs font-bold transition flex items-center gap-1">
                         <i data-feather="log-out" class="w-4 h-4"></i> Keluar
                     </button>
@@ -73,47 +78,52 @@
                     <p id="roleTitle" class="font-bold text-slate-800 text-lg">Peran</p>
                 </div>
 
-                <!-- Menu akan di-generate oleh JavaScript sesuai Role -->
                 <div id="menuContainer" class="space-y-1"></div>
             </nav>
 
             <!-- Main Content -->
             <main id="mainContent" class="md:col-span-3">
                 
-                <!-- MODUL: UPLOAD DATA RT -->
+                <!-- KONTEN: UPLOAD LAPORAN (KHUSUS RT) -->
                 <div id="modul-upload" class="hidden space-y-6 animasi-muncul">
                     <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                        <h3 class="text-lg font-bold mb-4 flex items-center gap-2"><i data-feather="upload-cloud" class="text-emerald-600"></i> Form Upload Data RT</h3>
-                        <form onsubmit="uploadDataRT(event)" class="space-y-4">
+                        <h3 class="text-lg font-bold mb-4 flex items-center gap-2"><i data-feather="upload-cloud" class="text-emerald-600"></i> Buat Laporan Baru</h3>
+                        <form onsubmit="kirimLaporan(event)" class="space-y-4">
                             <div>
-                                <label class="block text-sm font-semibold text-slate-600 mb-1">Nama / Judul Laporan</label>
-                                <input type="text" id="inputJudul" required placeholder="Contoh: Laporan Dana Kas Bulan Oktober" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-emerald-600">
+                                <label class="block text-sm font-semibold text-slate-600 mb-1">Kategori / Modul Laporan</label>
+                                <select id="inputKategori" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-emerald-600">
+                                    <!-- Diisi otomatis oleh JavaScript -->
+                                </select>
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-slate-600 mb-1">Lampirkan Foto / Bukti Dokumen</label>
-                                <input type="file" id="inputFoto" required accept="image/*,.pdf" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-emerald-100 file:text-emerald-700 hover:file:bg-emerald-200">
+                                <label class="block text-sm font-semibold text-slate-600 mb-1">Judul / Keterangan Laporan</label>
+                                <input type="text" id="inputJudul" required placeholder="Contoh: Pendataan Warga Pendatang di Kos Ibu Ani" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:border-emerald-600">
                             </div>
-                            <button type="submit" class="bg-emerald-600 text-white font-bold text-sm px-4 py-2 rounded-lg hover:bg-emerald-700">Kirim Data ke Admin</button>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-600 mb-1">Lampirkan Bukti (Foto/Dokumen)</label>
+                                <input type="file" id="inputDokumen" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-emerald-100 file:text-emerald-700 hover:file:bg-emerald-200">
+                            </div>
+                            <button type="submit" class="bg-emerald-600 text-white font-bold text-sm px-4 py-2 rounded-lg hover:bg-emerald-700">Kirim Laporan ke Kecamatan</button>
                         </form>
                     </div>
                 </div>
 
-                <!-- MODUL: VERIFIKASI (ADMIN & SUPER ADMIN) -->
-                <div id="modul-verifikasi" class="hidden space-y-6 animasi-muncul">
+                <!-- KONTEN: TABEL DATA (DIGUNAKAN OLEH SEMUA PERAN DGN AKSES BEDA) -->
+                <div id="modul-tabel" class="hidden space-y-6 animasi-muncul">
                     <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                        <h3 class="text-lg font-bold mb-4">Daftar Data Masuk (Dari RT)</h3>
+                        <h3 id="judulTabel" class="text-lg font-bold mb-4">Daftar Laporan</h3>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left text-sm">
                                 <thead class="bg-slate-50 text-slate-500 border-b">
                                     <tr>
-                                        <th class="py-2 px-3">Tanggal</th>
-                                        <th class="py-2 px-3">Judul Data</th>
-                                        <th class="py-2 px-3">Foto / File</th>
-                                        <th class="py-2 px-3">Status</th>
-                                        <th id="kolomAksi" class="py-2 px-3 text-center hidden">Aksi Verifikasi</th>
+                                        <th class="py-2 px-3">Tgl Lapor</th>
+                                        <th class="py-2 px-3">Kategori & Judul</th>
+                                        <th class="py-2 px-3">Bukti File</th>
+                                        <th class="py-2 px-3">Status & Catatan Admin</th>
+                                        <th id="kolomAksi" class="py-2 px-3 text-center hidden w-32">Verifikasi</th>
                                     </tr>
                                 </thead>
-                                <tbody id="tabelDataRT" class="divide-y divide-slate-100">
+                                <tbody id="tbodyLaporan" class="divide-y divide-slate-100">
                                     <!-- Data dari JS -->
                                 </tbody>
                             </table>
@@ -121,14 +131,14 @@
                     </div>
                 </div>
 
-                <!-- MODUL: SUPER ADMIN KONTROL -->
+                <!-- KONTEN: PENGATURAN SUPER ADMIN -->
                 <div id="modul-superadmin" class="hidden space-y-6 animasi-muncul">
                     <div class="bg-slate-800 text-white p-6 rounded-xl shadow-sm border border-slate-700">
-                        <h3 class="text-lg font-bold mb-4 flex items-center gap-2"><i data-feather="settings" class="text-emerald-400"></i> Tambah Fungsi / Modul Baru</h3>
-                        <p class="text-sm text-slate-300 mb-6">Fitur ini hanya dapat diakses oleh Super Admin untuk memperluas fungsi website.</p>
-                        <form onsubmit="tambahModulBaru(event)" class="space-y-4 bg-slate-900 p-4 rounded-lg">
-                            <input type="text" id="inputNamaModul" required placeholder="Nama Modul Baru" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-400">
-                            <button type="submit" class="bg-emerald-500 text-slate-900 font-bold text-sm px-4 py-2 rounded-lg hover:bg-emerald-400">Tambahkan Modul</button>
+                        <h3 class="text-lg font-bold mb-2 flex items-center gap-2"><i data-feather="settings" class="text-emerald-400"></i> Tambah Kategori Pelaporan RT</h3>
+                        <p class="text-sm text-slate-300 mb-6">Modul kategori yang ditambahkan di sini akan langsung muncul di formulir RT.</p>
+                        <form onsubmit="tambahKategori(event)" class="space-y-4 bg-slate-900 p-4 rounded-lg">
+                            <input type="text" id="inputKategoriBaru" required placeholder="Contoh: Laporan Bencana Alam" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-400">
+                            <button type="submit" class="bg-emerald-500 text-slate-900 font-bold text-sm px-4 py-2 rounded-lg hover:bg-emerald-400">Simpan Modul Baru</button>
                         </form>
                     </div>
                 </div>
