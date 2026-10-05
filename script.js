@@ -110,29 +110,38 @@ window.handleLogin = function(event) {
 }
 
 function bukaDashboard() {
-    document.getElementById('loginPage').style.display = 'none';
-    
+    const loginPage = document.getElementById('loginPage');
+    const dashboardRT = document.getElementById('dashboardRT');
+    const dashboardOperator = document.getElementById('dashboardOperator');
+
+    if (loginPage) loginPage.style.display = 'none';
+
     if (currentUser.role === 'rt') {
-        document.getElementById('dashboardRT').classList.remove('hidden');
-        document.getElementById('dashboardOperator').classList.add('hidden');
-        document.getElementById('rtNamaHeader').innerText = currentUser.nama;
+        if (dashboardRT) dashboardRT.classList.remove('hidden');
+        if (dashboardOperator) dashboardOperator.classList.add('hidden');
+        
+        const rtNamaHeader = document.getElementById('rtNamaHeader');
+        if (rtNamaHeader) rtNamaHeader.innerText = currentUser.nama;
+        
         updateDropdownLayananRT();
         renderTabelRT();
     } else {
-        document.getElementById('dashboardOperator').classList.remove('hidden');
-        document.getElementById('dashboardRT').classList.add('hidden');
-        document.getElementById('opGreetingName').innerText = currentUser.nama;
+        if (dashboardOperator) dashboardOperator.classList.remove('hidden');
+        if (dashboardRT) dashboardRT.classList.add('hidden');
+        
+        const opGreetingName = document.getElementById('opGreetingName');
+        if (opGreetingName) opGreetingName.innerText = currentUser.nama;
         
         const panelSuper = document.getElementById('panelSuperAdmin');
         const sidebarTitle = document.getElementById('sidebarTitle');
         
         if (currentUser.role === 'super') {
-            panelSuper.classList.remove('hidden');
-            if(sidebarTitle) sidebarTitle.innerText = "Super Admin Pusat";
+            if (panelSuper) panelSuper.classList.remove('hidden');
+            if (sidebarTitle) sidebarTitle.innerText = "Super Admin Pusat";
             renderListLayananSuper();
         } else {
-            panelSuper.classList.add('hidden');
-            if(sidebarTitle) sidebarTitle.innerText = "Operator Desa";
+            if (panelSuper) panelSuper.classList.add('hidden');
+            if (sidebarTitle) sidebarTitle.innerText = "Operator Desa";
         }
 
         setupFilterRTDropdown();
@@ -143,9 +152,14 @@ function bukaDashboard() {
 
 window.prosesLogout = function() {
     currentUser = null;
-    document.getElementById('dashboardRT').classList.add('hidden');
-    document.getElementById('dashboardOperator').classList.add('hidden');
-    document.getElementById('loginPage').style.display = 'flex';
+    const loginPage = document.getElementById('loginPage');
+    const dashboardRT = document.getElementById('dashboardRT');
+    const dashboardOperator = document.getElementById('dashboardOperator');
+
+    if (dashboardRT) dashboardRT.classList.add('hidden');
+    if (dashboardOperator) dashboardOperator.classList.add('hidden');
+    if (loginPage) loginPage.style.display = 'flex';
+
     document.getElementById('loginUsername').value = '';
     document.getElementById('loginPassword').value = '';
 }
