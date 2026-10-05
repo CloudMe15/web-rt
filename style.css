@@ -1,0 +1,20 @@
+/* Mengatur scroll agar halus saat pindah bagian halaman */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Kustomisasi animasi sederhana saat pindah tab menu */
+.animasi-muncul {
+    animation: fadeIn 0.4s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
