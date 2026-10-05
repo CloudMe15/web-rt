@@ -27,25 +27,6 @@ let currentStatusOp = 'Semua';
 document.addEventListener("DOMContentLoaded", () => {
     feather.replace();
     muatJenisLayanan();
-
-    const formLogin = document.getElementById('formLogin');
-    if(formLogin) {
-        formLogin.addEventListener('submit', prosesLogin);
-    }
-
-    const formLaporanRT = document.getElementById('formLaporanRT');
-    if(formLaporanRT) {
-        formLaporanRT.addEventListener('submit', kirimFormulirRT);
-    }
-
-    const btnLogoutRT = document.getElementById('btnLogoutRT');
-    if(btnLogoutRT) btnLogoutRT.addEventListener('click', prosesLogout);
-
-    const btnLogoutOp = document.getElementById('btnLogoutOp');
-    if(btnLogoutOp) btnLogoutOp.addEventListener('click', prosesLogout);
-
-    const btnTambahLayanan = document.getElementById('btnTambahLayanan');
-    if(btnTambahLayanan) btnTambahLayanan.addEventListener('click', tambahJenisLayanan);
 });
 
 onSnapshot(collection(db, "data_pelayanan"), (snapshot) => {
@@ -102,7 +83,7 @@ function updateDropdownLayananRT() {
     select.value = valSelected;
 }
 
-function prosesLogin(event) {
+window.handleLogin = function(event) {
     event.preventDefault();
     let user = document.getElementById('loginUsername').value.toLowerCase().trim();
     let pass = document.getElementById('loginPassword').value.trim();
@@ -160,7 +141,7 @@ function bukaDashboard() {
     setTimeout(() => feather.replace(), 100);
 }
 
-function prosesLogout() {
+window.prosesLogout = function() {
     currentUser = null;
     document.getElementById('dashboardRT').classList.add('hidden');
     document.getElementById('dashboardOperator').classList.add('hidden');
@@ -169,7 +150,7 @@ function prosesLogout() {
     document.getElementById('loginPassword').value = '';
 }
 
-async function tambahJenisLayanan() {
+window.tambahJenisLayanan = async function() {
     let input = document.getElementById('inputLayananBaru');
     let namaLayanan = input.value.trim();
     if(!namaLayanan) {
@@ -241,7 +222,7 @@ function kompresGambar(file, maxWidth = 800, quality = 0.6) {
     });
 }
 
-async function kirimFormulirRT(e) {
+window.kirimFormulirRT = async function(e) {
     e.preventDefault();
     const btnKirim = document.getElementById('btnKirim');
     
