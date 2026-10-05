@@ -6,11 +6,7 @@
     <title>Sistem Pelayanan Desa</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/feather-icons"></script>
-    <style>
-        .custom-scroll::-webkit-scrollbar { height: 6px; width: 6px; }
-        .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen md:h-screen md:overflow-hidden flex flex-col">
 
@@ -18,10 +14,10 @@
         <div class="bg-white p-6 md:p-8 rounded-lg shadow-2xl w-full max-w-md border-t-4 border-blue-600">
             <div class="text-center mb-6">
                 <h2 class="text-2xl font-bold text-slate-800">Portal Desa Real-Time</h2>
-                <p class="text-sm text-slate-500">Silakan masuk sesuai akun Anda (rt1-rt19, operator, super)</p>
+                <p class="text-sm text-slate-500">Silakan masuk sesuai akun (rt1-rt19, operator, super)</p>
             </div>
             
-            <form id="formLogin" class="space-y-4">
+            <form onsubmit="handleLogin(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-600 mb-1">Username</label>
                     <input type="text" id="loginUsername" required placeholder="Contoh: rt1, operator, super" class="w-full px-4 py-2.5 border border-slate-300 rounded focus:outline-none focus:border-blue-600 bg-slate-50 text-sm">
@@ -44,13 +40,13 @@
                 <h1 id="rtNamaHeader" class="text-base md:text-xl font-bold">Ketua RT</h1>
                 <p class="text-[10px] md:text-xs text-emerald-200">Panel Pengajuan Layanan Warga</p>
             </div>
-            <button id="btnLogoutRT" class="bg-emerald-800 hover:bg-rose-600 px-3 py-1.5 rounded text-xs font-bold transition flex items-center gap-1"><i data-feather="log-out" class="w-3.5 h-3.5"></i> Keluar</button>
+            <button onclick="prosesLogout()" class="bg-emerald-800 hover:bg-rose-600 px-3 py-1.5 rounded text-xs font-bold transition flex items-center gap-1"><i data-feather="log-out" class="w-3.5 h-3.5"></i> Keluar</button>
         </header>
 
         <main class="max-w-5xl mx-auto w-full p-4 md:p-6 space-y-6 flex-1">
             <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
                 <h3 class="font-bold text-base md:text-lg text-slate-800 mb-4 flex items-center gap-2"><i data-feather="edit" class="text-emerald-500 w-5 h-5"></i> Buat Laporan Baru</h3>
-                <form id="formLaporanRT" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <form onsubmit="kirimFormulirRT(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-600 mb-1">Nama Pemohon</label>
                         <input type="text" id="rtInputNama" required class="w-full border border-slate-300 rounded p-2 text-sm focus:border-emerald-500 bg-slate-50">
@@ -70,7 +66,7 @@
                         <textarea id="rtInputKeperluan" required rows="2" class="w-full border border-slate-300 rounded p-2 text-sm focus:border-emerald-500 bg-slate-50"></textarea>
                     </div>
                     <div class="md:col-span-2 bg-slate-50 p-3 border border-slate-200 rounded">
-                        <label class="block text-xs font-bold text-slate-600 mb-1">Upload Lampiran (KTP/KK - Otomatis Kompres)</label>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Upload Lampiran (KTP/KK - Kompres Otomatis)</label>
                         <input type="file" id="rtInputBerkas" required accept="image/*,application/pdf" class="w-full text-xs file:mr-4 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-bold file:bg-emerald-100 file:text-emerald-700 hover:file:bg-emerald-200">
                     </div>
 
@@ -122,4 +118,81 @@
                 <button onclick="filterOpStatus('Selesai')" id="menu-Selesai" class="op-menu shrink-0 md:w-full flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2 md:py-3 text-xs md:text-sm transition md:border-l-4 border-transparent text-slate-400 hover:text-white rounded md:rounded-none">
                     <i data-feather="check-circle" class="w-3.5 h-3.5"></i> Selesai
                 </button>
-                <button onclick="
+                <button onclick="filterOpStatus('Dibatalkan')" id="menu-Dibatalkan" class="op-menu shrink-0 md:w-full flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2 md:py-3 text-xs md:text-sm transition md:border-l-4 border-transparent text-slate-400 hover:text-white rounded md:rounded-none">
+                    <i data-feather="x-circle" class="w-3.5 h-3.5"></i> Batal
+                </button>
+            </nav>
+        </aside>
+
+        <main class="flex-1 flex flex-col h-full overflow-hidden bg-[#ecf0f5]">
+            <header class="h-14 bg-[#3c8dbc] text-white flex items-center justify-between px-4 shadow shrink-0">
+                <div class="flex items-center gap-2">
+                    <span class="font-medium text-xs md:text-sm">Panel Kontrol Desa Real-Time</span>
+                </div>
+                <button onclick="prosesLogout()" class="text-xs md:text-sm font-medium hover:text-rose-200 flex items-center gap-1"><i data-feather="power" class="w-4 h-4"></i> Logout</button>
+            </header>
+
+            <div class="flex-1 overflow-y-auto p-3 md:p-4 custom-scroll space-y-4">
+                
+                <div id="panelSuperAdmin" class="hidden bg-white p-4 rounded shadow-sm border-l-4 border-purple-600">
+                    <h4 class="font-bold text-sm text-purple-800 mb-2 flex items-center gap-2"><i data-feather="settings" class="w-4 h-4"></i> Panel Super Admin: Pengaturan Jenis Layanan Desa</h4>
+                    <div class="flex gap-2 mb-3">
+                        <input type="text" id="inputLayananBaru" placeholder="Nama jenis layanan baru..." class="flex-1 border border-slate-300 rounded p-2 text-xs md:text-sm focus:outline-none focus:border-purple-600">
+                        <button onclick="tambahJenisLayanan()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs md:text-sm px-4 py-2 rounded transition flex items-center gap-1"><i data-feather="plus" class="w-4 h-4"></i> Tambah Layanan</button>
+                    </div>
+                    <div class="flex flex-wrap gap-2" id="daftarListLayanan"></div>
+                </div>
+
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+                    <div class="bg-[#00c0ef] text-white rounded p-3 md:p-4 relative overflow-hidden shadow-sm flex flex-col justify-between cursor-pointer" onclick="filterOpStatus('Menunggu')">
+                        <div><h3 id="countMasuk" class="text-2xl md:text-3xl font-bold mb-0.5">0</h3><p class="text-xs md:text-sm">Masuk</p></div>
+                        <i data-feather="message-square" class="absolute -right-2 -bottom-2 w-14 h-14 md:w-20 md:h-20 opacity-20 text-black"></i>
+                    </div>
+                    <div class="bg-[#f39c12] text-white rounded p-3 md:p-4 relative overflow-hidden shadow-sm flex flex-col justify-between cursor-pointer" onclick="filterOpStatus('Diproses')">
+                        <div><h3 id="countProses" class="text-2xl md:text-3xl font-bold mb-0.5">0</h3><p class="text-xs md:text-sm">Diproses</p></div>
+                        <i data-feather="refresh-cw" class="absolute -right-2 -bottom-2 w-14 h-14 md:w-20 md:h-20 opacity-20 text-black"></i>
+                    </div>
+                    <div class="bg-[#00a65a] text-white rounded p-3 md:p-4 relative overflow-hidden shadow-sm flex flex-col justify-between cursor-pointer" onclick="filterOpStatus('Selesai')">
+                        <div><h3 id="countSelesai" class="text-2xl md:text-3xl font-bold mb-0.5">0</h3><p class="text-xs md:text-sm">Selesai</p></div>
+                        <i data-feather="check-square" class="absolute -right-2 -bottom-2 w-14 h-14 md:w-20 md:h-20 opacity-20 text-black"></i>
+                    </div>
+                    <div class="bg-[#dd4b39] text-white rounded p-3 md:p-4 relative overflow-hidden shadow-sm flex flex-col justify-between cursor-pointer" onclick="filterOpStatus('Dibatalkan')">
+                        <div><h3 id="countBatal" class="text-2xl md:text-3xl font-bold mb-0.5">0</h3><p class="text-xs md:text-sm">Batal</p></div>
+                        <i data-feather="x-circle" class="absolute -right-2 -bottom-2 w-14 h-14 md:w-20 md:h-20 opacity-20 text-black"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white border-t-2 border-[#3c8dbc] shadow-sm rounded-b">
+                    <div class="bg-[#3c8dbc] text-white px-3 md:px-4 py-2.5 text-xs md:text-sm font-bold flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                        <span id="judulTabelOp">Semua Data Layanan</span>
+                        <div class="flex items-center gap-2 text-xs w-full sm:w-auto justify-between sm:justify-start">
+                            <span>Filter RT:</span>
+                            <select id="opFilterRT" onchange="renderTabelOperator()" class="text-slate-800 rounded px-2 py-1 outline-none text-xs">
+                                <option value="Semua">Semua RT (1-19)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="overflow-x-auto custom-scroll p-3 md:p-4">
+                        <table class="w-full text-left text-xs md:text-sm whitespace-nowrap">
+                            <thead class="border-b-2 border-slate-200 text-slate-600 font-bold">
+                                <tr>
+                                    <th class="py-2 pr-2">Pengirim</th>
+                                    <th class="py-2 pr-2">Tgl / Tiket</th>
+                                    <th class="py-2 pr-2">Nama & WA</th>
+                                    <th class="py-2 pr-2">Layanan & Berkas</th>
+                                    <th class="py-2 pr-2">Status</th>
+                                    <th class="py-2 text-center">Aksi (Status & Hapus)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelDataOperator" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>
