@@ -4,38 +4,40 @@ feather.replace();
 // 1. DATABASE & STATE SIMULASI
 // =====================================
 const databaseAkun = {
-    'rt': { password: '123', role: 'rt', nama: 'Bapak RT 04' },
-    'admin': { password: '123', role: 'admin', nama: 'Admin Kecamatan' },
-    'super': { password: '123', role: 'superadmin', nama: 'Super Admin Sistem' }
+    'warga': { role: 'warga', nama: 'Warga Masyarakat' },
+    'rt': { role: 'rt', nama: 'Bapak Ketua RT' },
+    'operator': { role: 'operator', nama: 'Operator Desa' }
 };
 
-// Kategori standar tugas RT
-let kategoriModul = [
-    'Pelayanan Administrasi (KTP/KK)', 
-    'Pendataan Kependudukan', 
-    'Keamanan & Ketertiban (Siskamling)', 
-    'Fasilitator Sosial (Kerja Bakti)', 
-    'Penghubung Informasi'
-];
-
-let dataLaporan = [
-    { 
-        id: 1, 
-        tanggal: '2026-10-04', 
-        kategori: 'Keamanan & Ketertiban (Siskamling)', 
-        judul: 'Jadwal Ronda Minggu Pertama', 
-        file: 'jadwal_ronda.pdf', 
-        status: 'Data Valid',
-        catatan: 'Terima kasih, data sudah dicatat di kecamatan.'
+// Data Dummy (Simulasi format Google Sheets)
+let dataPermohonan = [
+    {
+        id: 1,
+        timestamp: '2026-10-05 09:00',
+        nik: '1234567890123456',
+        nama: 'Ahmad Yani',
+        wa: '081234567890',
+        rt: 'RT 01',
+        layanan: 'Surat Pengantar SKCK',
+        keperluan: 'Melamar kerja',
+        catatanRT: '',
+        file: 'ktp_kk.jpg',
+        status: 'Menunggu', // Menunggu, Diproses, Selesai
+        catatanKendala: ''
     },
-    { 
-        id: 2, 
-        tanggal: '2026-10-05', 
-        kategori: 'Pendataan Kependudukan', 
-        judul: 'Warga Pendatang Baru Blok B', 
-        file: 'ktp_pendatang.jpg', 
-        status: 'Menunggu',
-        catatan: ''
+    {
+        id: 2,
+        timestamp: '2026-10-04 14:30',
+        nik: '9876543210987654',
+        nama: 'Siti Aminah',
+        wa: '089876543210',
+        rt: 'RT 02',
+        layanan: 'Surat Keterangan Usaha',
+        keperluan: 'Pinjaman bank',
+        catatanRT: 'Valid: Usaha warung sembako aktif di lingkungan.',
+        file: 'berkas_siti.pdf',
+        status: 'Diproses',
+        catatanKendala: 'Menunggu tanda tangan Kades'
     }
 ];
 
@@ -49,7 +51,8 @@ function prosesLogin(e) {
     const user = document.getElementById('loginUsername').value;
     const pass = document.getElementById('loginPassword').value;
 
-    if (databaseAkun[user] && databaseAkun[user].password === pass) {
+    // Login statis simulasi (password bebas asalkan '123')
+    if (databaseAkun[user] && pass === '123') {
         currentUser = databaseAkun[user];
         document.getElementById('loginError').classList.add('hidden');
         document.getElementById('loginPage').style.display = 'none';
@@ -65,61 +68,46 @@ function prosesLogout() {
     currentUser = null;
     document.getElementById('dashboardPage').style.display = 'none';
     document.getElementById('loginPage').style.display = 'flex';
-    document.getElementById('loginUsername').value = '';
-    document.getElementById('loginPassword').value = '';
 }
 
 // =====================================
 // 3. PENGATURAN DASHBOARD & MENU
 // =====================================
 function setupDashboard() {
-    document.getElementById('userGreeting').innerText = 'Akses: ' + currentUser.nama;
+    document.getElementById('userGreeting').innerText = currentUser.nama;
     
     const roleIcon = document.getElementById('roleIcon');
     const roleTitle = document.getElementById('roleTitle');
     const menuContainer = document.getElementById('menuContainer');
-    const kolomAksi = document.getElementById('kolomAksi');
-    const judulTabel = document.getElementById('judulTabel');
     
     menuContainer.innerHTML = ''; 
 
-    // PERAN: RT (Hanya bisa kirim dan lihat riwayat sendiri)
-    if (currentUser.role === 'rt') {
-        roleIcon.setAttribute('data-feather', 'user-check');
-        roleTitle.innerText = 'Pengurus RT';
-        judulTabel.innerText = 'Riwayat Laporan Saya';
-        kolomAksi.classList.add('hidden'); // RT tidak verifikasi
-
-        buatTombolMenu('upload', 'Buat Laporan Baru', 'edit');
-        buatTombolMenu('tabel', 'Status Laporan', 'file-text');
+    if (currentUser.role === 'warga' || currentUser.role === 'rt') {
+        roleIcon.setAttribute('data-feather', currentUser.role === 'rt' ? 'award' : 'user');
+        roleTitle.innerText = currentUser.role === 'rt' ? 'Ketua RT (Garda Depan)' : 'Warga Pemohon';
         
-        perbaruiDropdownKategori();
-        bukaModul('upload');
+        // Form tambahan khusus RT
+        const panelRT = document.getElementById('panelCatatanRT');
+        if(currentUser.role === 'rt') {
+            panelRT.classList.remove('hidden');
+        } else {
+            panelRT.classList.add('hidden');
+        }
+
+        buatTombolMenu('formulir', 'Formulir Layanan', 'edit-3');
+        buatTombolMenu('status-warga', 'Cek Status', 'clock');
+        bukaModul('formulir');
     } 
-    // PERAN: ADMIN KECAMATAN (Mengecek dan Verifikasi)
-    else if (currentUser.role === 'admin') {
-        roleIcon.setAttribute('data-feather', 'check-circle');
-        roleTitle.innerText = 'Admin Kecamatan';
-        judulTabel.innerText = 'Verifikasi Laporan RT Masuk';
-        kolomAksi.classList.remove('hidden'); // Admin bisa verifikasi
+    else if (currentUser.role === 'operator') {
+        roleIcon.setAttribute('data-feather', 'laptop');
+        roleTitle.innerText = 'Operator Desa';
 
-        buatTombolMenu('tabel', 'Antrean Verifikasi', 'inbox');
-        bukaModul('tabel');
-    }
-    // PERAN: SUPER ADMIN (Memantau semua & Tambah Modul)
-    else if (currentUser.role === 'superadmin') {
-        roleIcon.setAttribute('data-feather', 'server');
-        roleTitle.innerText = 'Super Admin';
-        judulTabel.innerText = 'Pantauan Semua Laporan RT';
-        kolomAksi.classList.add('hidden'); // Super admin hanya mantau tabel, tidak verifikasi tugas kecamatan
-
-        buatTombolMenu('tabel', 'Master Data Laporan', 'database');
-        buatTombolMenu('superadmin', 'Pengaturan Modul', 'settings');
-        bukaModul('tabel');
+        buatTombolMenu('monitoring', 'Dashboard Google Sheets', 'sidebar');
+        bukaModul('monitoring');
     }
 
     feather.replace(); 
-    renderTabel(); 
+    renderTabelData(); 
 }
 
 function buatTombolMenu(idModul, teks, ikon) {
@@ -132,7 +120,7 @@ function buatTombolMenu(idModul, teks, ikon) {
 }
 
 function bukaModul(idModul) {
-    const semuaModul = ['upload', 'tabel', 'superadmin'];
+    const semuaModul = ['formulir', 'monitoring', 'status-warga'];
     
     semuaModul.forEach(m => {
         let el = document.getElementById('modul-' + m);
@@ -145,136 +133,173 @@ function bukaModul(idModul) {
     let activeBtn = document.getElementById('btn-modul-' + idModul);
     
     if(activeEl) activeEl.classList.remove('hidden');
-    if(activeBtn) {
-        if(idModul === 'superadmin') {
-            activeBtn.className = "modul-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition bg-slate-800 text-white shadow";
-        } else {
-            activeBtn.className = "modul-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition bg-emerald-600 text-white shadow";
-        }
-    }
+    if(activeBtn) activeBtn.className = "modul-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition bg-emerald-600 text-white shadow";
 }
 
 // =====================================
-// 4. LOGIKA RT: UPLOAD & KATEGORI DINAMIS
+// 4. LOGIKA PENGISIAN FORM (Warga / RT)
 // =====================================
-function perbaruiDropdownKategori() {
-    const dropdown = document.getElementById('inputKategori');
-    if(dropdown) {
-        dropdown.innerHTML = '<option value="">-- Pilih Kategori Laporan --</option>';
-        kategoriModul.forEach(kat => {
-            dropdown.innerHTML += `<option value="${kat}">${kat}</option>`;
-        });
-    }
-}
-
-function kirimLaporan(e) {
+function kirimFormulir(e) {
     e.preventDefault();
-    const kategori = document.getElementById('inputKategori').value;
-    const judul = document.getElementById('inputJudul').value;
-    const fileInput = document.getElementById('inputDokumen');
-    const namaFile = fileInput.files.length > 0 ? fileInput.files[0].name : 'Tidak_ada_file';
+    
+    const d = new Date();
+    const timestampStr = d.toISOString().split('T')[0] + ' ' + d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
 
-    const tgl = new Date().toISOString().split('T')[0];
+    let catatanTambahan = '';
+    if(currentUser.role === 'rt') {
+        catatanTambahan = document.getElementById('inputCatatanRT').value;
+    }
 
-    dataLaporan.unshift({
+    dataPermohonan.push({
         id: Date.now(),
-        tanggal: tgl,
-        kategori: kategori,
-        judul: judul,
-        file: namaFile,
+        timestamp: timestampStr,
+        nik: document.getElementById('inputNIK').value,
+        nama: document.getElementById('inputNama').value,
+        wa: document.getElementById('inputWA').value,
+        rt: document.getElementById('inputRT').value,
+        layanan: document.getElementById('inputLayanan').value,
+        keperluan: document.getElementById('inputKeperluan').value,
+        catatanRT: catatanTambahan,
+        file: document.getElementById('inputBerkas').files[0].name,
         status: 'Menunggu',
-        catatan: ''
+        catatanKendala: ''
     });
 
-    document.getElementById('inputJudul').value = '';
-    document.getElementById('inputKategori').value = '';
-    fileInput.value = '';
-    
-    alert("Laporan berhasil dikirim ke Kantor Kecamatan!");
-    bukaModul('tabel'); 
-    renderTabel();
+    e.target.reset(); // Kosongkan form
+    alert("Formulir berhasil dikirim ke Operator Desa!");
+    bukaModul('status-warga'); 
+    renderTabelData();
 }
 
 // =====================================
-// 5. LOGIKA RENDER TABEL & VERIFIKASI ADMIN
+// 5. RENDER TABEL (Operator & Warga)
 // =====================================
-function renderTabel() {
-    const tbody = document.getElementById('tbodyLaporan');
-    tbody.innerHTML = '';
+function getStatusWarna(status) {
+    if (status === 'Menunggu') return 'bg-red-500 text-white'; // Merah
+    if (status === 'Diproses') return 'bg-yellow-400 text-slate-800'; // Kuning
+    if (status === 'Selesai') return 'bg-green-500 text-white'; // Hijau
+    return '';
+}
 
-    dataLaporan.forEach(data => {
-        let badgeStyle = data.status === 'Data Valid' ? 'bg-emerald-100 text-emerald-700' :
-                         data.status === 'Tidak Lengkap' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700';
+function renderTabelData() {
+    // Render Tabel Warga/RT
+    const tbodyWarga = document.getElementById('tabelStatusWarga');
+    if(tbodyWarga) tbodyWarga.innerHTML = '';
 
-        let tr = document.createElement('tr');
-        tr.className = "hover:bg-slate-50";
+    // Render Tabel Operator (Gaya Google Sheets)
+    const tbodyOp = document.getElementById('tabelOperator');
+    if(tbodyOp) tbodyOp.innerHTML = '';
 
-        let html = `
-            <td class="py-3 px-3 text-slate-500 whitespace-nowrap">${data.tanggal}</td>
-            <td class="py-3 px-3">
-                <span class="block text-xs font-bold text-emerald-600 mb-0.5">${data.kategori}</span>
-                <span class="font-medium text-slate-800">${data.judul}</span>
-            </td>
-            <td class="py-3 px-3">
-                <button onclick="lihatBerkas('${data.file}')" class="inline-flex items-center gap-1 text-xs bg-white hover:bg-slate-100 px-2 py-1.5 rounded border border-slate-300 transition">
-                    <i data-feather="download" class="w-3 h-3 text-slate-600"></i> ${data.file}
-                </button>
-            </td>
-            <td class="py-3 px-3">
-                <span class="px-2 py-1 rounded text-xs font-bold ${badgeStyle}">${data.status}</span>
-                ${data.catatan ? `<p class="text-xs text-slate-500 mt-1 italic">"${data.catatan}"</p>` : ''}
-            </td>
-        `;
+    // Sort: terbaru di atas
+    let sortedData = [...dataPermohonan].reverse();
 
-        // Tampilkan tombol Verifikasi HANYA jika perannya ADMIN
-        if (currentUser.role === 'admin') {
-            if (data.status === 'Menunggu') {
-                html += `
-                <td class="py-3 px-3 text-center">
-                    <div class="flex flex-col gap-1">
-                        <button onclick="verifikasiLaporan(${data.id}, 'Data Valid')" class="px-2 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-xs hover:bg-emerald-100 font-bold">Valid</button>
-                        <button onclick="verifikasiLaporan(${data.id}, 'Tidak Lengkap')" class="px-2 py-1.5 bg-rose-50 text-rose-700 border border-rose-200 rounded text-xs hover:bg-rose-100 font-bold">Tolak</button>
-                    </div>
-                </td>`;
-            } else {
-                html += `<td class="py-3 px-3 text-center text-xs text-slate-400 font-medium">Telah Diproses</td>`;
-            }
+    sortedData.forEach(data => {
+        // --- 1. BARIS UNTUK TABEL WARGA/RT ---
+        if (currentUser.role === 'warga' || currentUser.role === 'rt') {
+            let trWarga = document.createElement('tr');
+            trWarga.className = "hover:bg-slate-50";
+            trWarga.innerHTML = `
+                <td class="py-3 px-3 text-xs text-slate-500">${data.timestamp}</td>
+                <td class="py-3 px-3 font-semibold text-slate-700">${data.nama}</td>
+                <td class="py-3 px-3 text-sm">${data.layanan}</td>
+                <td class="py-3 px-3">
+                    <span class="px-2 py-1 rounded text-xs font-bold ${getStatusWarna(data.status)}">${data.status}</span>
+                </td>
+                <td class="py-3 px-3 text-xs text-rose-600 font-medium">${data.catatanKendala || '-'}</td>
+            `;
+            if(tbodyWarga) tbodyWarga.appendChild(trWarga);
         }
+        
+        // --- 2. BARIS UNTUK TABEL OPERATOR ---
+        if (currentUser.role === 'operator') {
+            let trOp = document.createElement('tr');
+            // Warna baris diwarnai tipis sesuai status
+            let rowColor = data.status === 'Menunggu' ? 'bg-red-50' : data.status === 'Diproses' ? 'bg-yellow-50' : 'bg-green-50';
+            trOp.className = `${rowColor} border-b border-slate-200`;
 
-        tr.innerHTML = html;
-        tbody.appendChild(tr);
+            trOp.innerHTML = `
+                <td class="py-2 px-3 border-r border-slate-200 text-xs text-slate-500 whitespace-nowrap">${data.timestamp}</td>
+                <td class="py-2 px-3 border-r border-slate-200 font-semibold text-slate-700">
+                    ${data.nama} <br> <span class="text-xs text-slate-400 font-normal">NIK: ${data.nik}</span>
+                </td>
+                <td class="py-2 px-3 border-r border-slate-200 text-xs">${data.wa}</td>
+                <td class="py-2 px-3 border-r border-slate-200 text-xs">${data.rt}</td>
+                <td class="py-2 px-3 border-r border-slate-200 text-xs">
+                    ${data.layanan} <br>
+                    <a href="#" class="text-blue-600 hover:underline">Lihat Berkas (${data.file})</a>
+                    ${data.catatanRT ? `<br><span class="text-rose-600 italic">Catatan RT: ${data.catatanRT}</span>` : ''}
+                </td>
+                <td class="py-2 px-3 border-r border-slate-200 text-center">
+                    <span class="px-2 py-1 rounded text-xs font-bold shadow-sm ${getStatusWarna(data.status)} cursor-pointer" onclick="ubahStatus(${data.id})">
+                        ${data.status} &#9662;
+                    </span>
+                </td>
+                <td class="py-2 px-3 border-r border-slate-200 text-xs font-medium text-rose-700 cursor-pointer" onclick="tambahKendala(${data.id})">
+                    ${data.catatanKendala || '<span class="text-slate-400 italic">Klik tambah kendala...</span>'}
+                </td>
+                <td class="py-2 px-3 text-center">
+                    <button onclick="kirimWA(${data.id})" class="inline-flex items-center gap-1 px-2 py-1.5 bg-green-100 text-green-700 border border-green-300 rounded text-xs font-bold hover:bg-green-200 transition">
+                        <i data-feather="message-circle" class="w-3 h-3"></i> Kirim WA
+                    </button>
+                </td>
+            `;
+            if(tbodyOp) tbodyOp.appendChild(trOp);
+        }
     });
+
     feather.replace();
 }
 
-function lihatBerkas(nama) {
-    alert("Membuka file bukti: " + nama);
+// =====================================
+// 6. FUNGSI OPERATOR DESA
+// =====================================
+function ubahStatus(id) {
+    const index = dataPermohonan.findIndex(d => d.id === id);
+    if (index !== -1) {
+        let current = dataPermohonan[index].status;
+        // Siklus perubahan status: Menunggu -> Diproses -> Selesai -> Menunggu
+        if (current === 'Menunggu') dataPermohonan[index].status = 'Diproses';
+        else if (current === 'Diproses') dataPermohonan[index].status = 'Selesai';
+        else dataPermohonan[index].status = 'Menunggu';
+        renderTabelData();
+    }
 }
 
-function verifikasiLaporan(id, statusBaru) {
-    const index = dataLaporan.findIndex(d => d.id === id);
+function tambahKendala(id) {
+    const index = dataPermohonan.findIndex(d => d.id === id);
     if (index !== -1) {
-        // Minta Admin memasukkan catatan/alasan
-        let catatanAdmin = prompt(`Masukkan catatan untuk RT (Opsional).\nStatus baru: ${statusBaru}`);
-        
-        if (catatanAdmin !== null) { // Jika tidak di-cancel
-            dataLaporan[index].status = statusBaru;
-            dataLaporan[index].catatan = catatanAdmin;
-            renderTabel(); 
+        let kendala = prompt("Masukkan Catatan Kendala (misal: Foto KK buram):", dataPermohonan[index].catatanKendala);
+        if (kendala !== null) {
+            dataPermohonan[index].catatanKendala = kendala;
+            renderTabelData();
         }
     }
 }
 
-// =====================================
-// 6. LOGIKA SUPER ADMIN: TAMBAH KATEGORI
-// =====================================
-function tambahKategori(e) {
-    e.preventDefault();
-    const kategoriBaru = document.getElementById('inputKategoriBaru').value;
+function kirimWA(id) {
+    const data = dataPermohonan.find(d => d.id === id);
+    if (!data) return;
+
+    let pesan = "";
     
-    // Tambahkan ke array memori
-    kategoriModul.push(kategoriBaru);
-    
-    document.getElementById('inputKategoriBaru').value = '';
-    alert(`Modul pelaporan "${kategoriBaru}" berhasil ditambahkan ke dalam sistem! RT sekarang dapat menggunakannya.`);
+    // Format sesuai blueprint "Templat Pesan Notifikasi WhatsApp Operator"
+    if (data.status === 'Selesai') {
+        pesan = `Assalamu'alaikum Wr. Wb. / Selamat Siang,\nYth. Bapak/Ibu *${data.nama}*,\n\nPermohonan pengurusan *${data.layanan}* Anda di Kantor Desa Lubuk Sitarak telah SELESAI diproses.\n\nSilakan datang ke Kantor Desa Lubuk Sitarak pada jam kerja (Senin-Jumat, 08.00-15.00 WIB) untuk pengambilan berkas fisik dengan membawa identitas diri (KTP asli).\n\nTerima kasih.`;
+    } 
+    else if (data.catatanKendala !== '') {
+        pesan = `Assalamu'alaikum Wr. Wb. / Selamat Siang,\nYth. Bapak/Ibu *${data.nama}*,\n\nSehubungan dengan permohonan *${data.layanan}* Anda, terdapat berkas yang perlu diperbaiki/dilengkapi:\nKendala: *${data.catatanKendala}*\n\nMohon kirimkan ulang berkas tersebut melalui balasan WhatsApp ini agar dokumen dapat segera kami proses.\n\nTerima kasih.`;
+    } 
+    else {
+        alert("Pilih status 'Selesai' atau tambahkan 'Catatan Kendala' terlebih dahulu sebelum mengirim WA konfirmasi.");
+        return;
+    }
+
+    // Format nomor HP ke format internasional (ubah 08 menjadi 628)
+    let noWA = data.wa;
+    if(noWA.startsWith('0')) {
+        noWA = '62' + noWA.substring(1);
+    }
+
+    const urlWA = `https://wa.me/${noWA}?text=${encodeURIComponent(pesan)}`;
+    window.open(urlWA, '_blank');
 }
