@@ -24,13 +24,30 @@ let jenisLayananList = [];
 let currentUser = null; 
 let currentStatusOp = 'Semua';
 
-// Inisialisasi otomatis saat web dibuka
 document.addEventListener("DOMContentLoaded", () => {
     feather.replace();
     muatJenisLayanan();
+
+    const formLogin = document.getElementById('formLogin');
+    if(formLogin) {
+        formLogin.addEventListener('submit', prosesLogin);
+    }
+
+    const formLaporanRT = document.getElementById('formLaporanRT');
+    if(formLaporanRT) {
+        formLaporanRT.addEventListener('submit', kirimFormulirRT);
+    }
+
+    const btnLogoutRT = document.getElementById('btnLogoutRT');
+    if(btnLogoutRT) btnLogoutRT.addEventListener('click', prosesLogout);
+
+    const btnLogoutOp = document.getElementById('btnLogoutOp');
+    if(btnLogoutOp) btnLogoutOp.addEventListener('click', prosesLogout);
+
+    const btnTambahLayanan = document.getElementById('btnTambahLayanan');
+    if(btnTambahLayanan) btnTambahLayanan.addEventListener('click', tambahJenisLayanan);
 });
 
-// Listener Real-Time Firestore
 onSnapshot(collection(db, "data_pelayanan"), (snapshot) => {
     dataPermohonan = [];
     snapshot.forEach((docSnap) => {
@@ -70,87 +87,8 @@ async function simpanJenisLayananKeDB() {
     try {
         await setDoc(doc(db, "pengaturan", "layanan_desa"), { list: jenisLayananList });
     } catch (e) {
-        console.error("Gagal simpan layanan: ", e);
+        console.error(e);
     }
 }
 
-function updateDropdownLayananRT() {
-    const select = document.getElementById('rtInputLayanan');
-    if (!select) return;
-    let valSelected = select.value;
-    select.innerHTML = '<option value="">Pilih Jenis Layanan...</option>';
-    jenisLayananList.forEach(layanan => {
-        select.innerHTML += `<option value="${layanan}">${layanan}</option>`;
-    });
-    select.value = valSelected;
-}
-
-// FUNGSI UTAMA LOGIN (DIPASTIKAN BERJALAN GLOBAL)
-window.prosesLogin = function(event) {
-    event.preventDefault();
-    let user = document.getElementById('loginUsername').value.toLowerCase().trim();
-    let pass = document.getElementById('loginPassword').value.trim();
-    let errDiv = document.getElementById('loginError');
-
-    if (user.startsWith('rt') && pass === '123') {
-        let nomorRT = parseInt(user.replace('rt', ''));
-        if (nomorRT >= 1 && nomorRT <= 19) {
-            let rtFormat = nomorRT < 10 ? `RT 0${nomorRT}` : `RT ${nomorRT}`;
-            currentUser = { role: 'rt', nama: `Ketua ${rtFormat}`, rt_id: rtFormat };
-            errDiv.classList.add('hidden');
-            bukaDashboard();
-            return;
-        }
-    } 
-    else if (databaseAkun[user] && pass === '123') {
-        currentUser = databaseAkun[user];
-        errDiv.classList.add('hidden');
-        bukaDashboard();
-        return;
-    }
-
-    errDiv.classList.remove('hidden');
-}
-
-function bukaDashboard() {
-    document.getElementById('loginPage').style.display = 'none';
-    
-    if (currentUser.role === 'rt') {
-        document.getElementById('dashboardRT').classList.remove('hidden');
-        document.getElementById('dashboardOperator').classList.add('hidden');
-        document.getElementById('rtNamaHeader').innerText = currentUser.nama;
-        updateDropdownLayananRT();
-        renderTabelRT();
-    } else {
-        document.getElementById('dashboardOperator').classList.remove('hidden');
-        document.getElementById('dashboardRT').classList.add('hidden');
-        document.getElementById('opGreetingName').innerText = currentUser.nama;
-        
-        const panelSuper = document.getElementById('panelSuperAdmin');
-        const sidebarTitle = document.getElementById('sidebarTitle');
-        
-        if (currentUser.role === 'super') {
-            panelSuper.classList.remove('hidden');
-            if(sidebarTitle) sidebarTitle.innerText = "Super Admin Pusat";
-            renderListLayananSuper();
-        } else {
-            panelSuper.classList.add('hidden');
-            if(sidebarTitle) sidebarTitle.innerText = "Operator Desa";
-        }
-
-        setupFilterRTDropdown();
-        renderTabelOperator();
-    }
-    setTimeout(() => feather.replace(), 100);
-}
-
-window.prosesLogout = function() {
-    currentUser = null;
-    document.getElementById('dashboardRT').classList.add('hidden');
-    document.getElementById('dashboardOperator').classList.add('hidden');
-    document.getElementById('loginPage').style.display = 'flex';
-    document.getElementById('loginUsername').value = '';
-    document.getElementById('loginPassword').value = '';
-}
-
-// Super Admin: Tamb
+function updateDropdownLayananRT
